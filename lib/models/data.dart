@@ -1,12 +1,11 @@
-import 'dart:io';
-
 class Series {
   final String
   title;
   final List<
-    FileSystemEntity
+    String
   >
-  files; // list ของ pdf/cbz
+  files; // เก็บ path ของไฟล์ในซีรีส์
+
   Series({
     required this.title,
     required this.files,

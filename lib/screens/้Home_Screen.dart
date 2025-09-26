@@ -3,11 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:archive/archive_io.dart';
-import 'package:pdfx/pdfx.dart'; // ใช้ pdfx
+import 'package:pdfx/pdfx.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'PdfViewScreen.dart';
 import 'CbzViewScreen.dart';
+import 'package:workshopfinal/models/data.dart';
 
+/// ----------------
+/// ชั้นนอก HomeScreen
+/// ----------------
 class HomeScreen
     extends
         StatefulWidget {
@@ -29,40 +34,318 @@ class _HomeScreenState
           HomeScreen
         > {
   List<
-    String
+    Series
   >
-  filePaths =
-      []; // เก็บ path ไฟล์ที่เลือก
+  seriesList =
+      [];
 
+  /// ขอ permission สำหรับอ่านไฟล์
   Future<
     void
   >
-  pickFile(
-    BuildContext
-    context,
-  ) async {
+  requestPermissions() async {
+    if (await Permission.storage.request().isGranted) {
+      return;
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "ต้องการสิทธิ์เข้าถึงไฟล์",
+          ),
+        ),
+      );
+    }
+  }
+
+  /// เลือกหลายไฟล์แล้วรวมไว้ใน Playlist เดียว
+  Future<
+    void
+  >
+  pickFiles() async {
+    await requestPermissions();
+
     FilePickerResult?
     result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
       type: FileType.custom,
       allowedExtensions: [
         'pdf',
         'cbz',
       ],
+      allowCompression: false,
+      withData: false,
     );
 
     if (result !=
         null) {
-      String
-      filePath = result.files.single.path!;
+      List<
+        String
+      >
+      allFiles = [];
+
+      for (var file in result.files) {
+        if (file.path !=
+            null) {
+          allFiles.add(
+            file.path!,
+          );
+        }
+      }
+
       setState(
         () {
-          filePaths.add(
-            filePath,
-          ); // เก็บ path ไฟล์
+          if (allFiles.isNotEmpty) {
+            final existingIndex = seriesList.indexWhere(
+              (
+                s,
+              ) =>
+                  s.title ==
+                  "Playlist",
+            );
+
+            if (existingIndex >=
+                0) {
+              seriesList[existingIndex].files.addAll(
+                allFiles,
+              );
+            } else {
+              seriesList.add(
+                Series(
+                  title: "Playlist",
+                  files: allFiles,
+                ),
+              );
+            }
+          }
         },
       );
     }
   }
+
+  /// สร้าง thumbnail จากไฟล์ PDF หรือ CBZ
+  Future<
+    Widget
+  >
+  buildThumbnail(
+    String
+    path,
+  ) async {
+    if (path.endsWith(
+      '.pdf',
+    )) {
+      final doc = await PdfDocument.openFile(
+        path,
+      );
+      final page = await doc.getPage(
+        1,
+      );
+      final pageImage = await page.render(
+        width: 300,
+        height: 400,
+      );
+      if (pageImage !=
+          null) {
+        return Image.memory(
+          pageImage.bytes,
+          fit: BoxFit.cover,
+        );
+      } else {
+        return Container(
+          color: Colors.grey[300],
+          child: const Center(
+            child: Text(
+              "โหลดภาพไม่ได้",
+            ),
+          ),
+        );
+      }
+    } else if (path.endsWith(
+      '.cbz',
+    )) {
+      final bytes = File(
+        path,
+      ).readAsBytesSync();
+      final archive = ZipDecoder().decodeBytes(
+        bytes,
+      );
+      final tempDir = await getTemporaryDirectory();
+
+      for (final file in archive) {
+        if (file.isFile) {
+          final filename = '${tempDir.path}/${file.name}';
+          File(
+            filename,
+          ).writeAsBytesSync(
+            file.content
+                as List<
+                  int
+                >,
+          );
+          return Image.file(
+            File(
+              filename,
+            ),
+            fit: BoxFit.cover,
+          );
+        }
+      }
+    }
+
+    return Container(
+      color: Colors.grey[300],
+    );
+  }
+
+  @override
+  Widget
+  build(
+    BuildContext
+    context,
+  ) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          "ชั้นหนังสือ",
+        ),
+      ),
+      body: seriesList.isEmpty
+          ? const Center(
+              child: Text(
+                "กด + เพื่อเพิ่มไฟล์",
+              ),
+            )
+          : GridView.builder(
+              padding: const EdgeInsets.all(
+                8,
+              ),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                childAspectRatio: 0.7,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+              ),
+              itemCount: seriesList.length,
+              itemBuilder:
+                  (
+                    context,
+                    index,
+                  ) {
+                    final series = seriesList[index];
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (
+                                  _,
+                                ) => SeriesDetailScreen(
+                                  series: series,
+                                ),
+                          ),
+                        );
+                      },
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: series.files.isNotEmpty
+                                ? FutureBuilder<
+                                    Widget
+                                  >(
+                                    future: buildThumbnail(
+                                      series.files.first,
+                                    ),
+                                    builder:
+                                        (
+                                          context,
+                                          snapshot,
+                                        ) {
+                                          if (snapshot.hasData) return snapshot.data!;
+                                          return Container(
+                                            color: Colors.grey[300],
+                                            child: const Center(
+                                              child: CircularProgressIndicator(),
+                                            ),
+                                          );
+                                        },
+                                  )
+                                : Container(
+                                    color: Colors.grey[300],
+                                    child: const Center(
+                                      child: Text(
+                                        "ไม่มีไฟล์",
+                                      ),
+                                    ),
+                                  ),
+                          ),
+                          const SizedBox(
+                            height: 5,
+                          ),
+                          Text(
+                            series.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+            ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.deepPurple,
+        onPressed: () {
+          showModalBottomSheet(
+            context: context,
+            builder:
+                (
+                  BuildContext context,
+                ) {
+                  return SafeArea(
+                    child: Wrap(
+                      children: [
+                        ListTile(
+                          leading: const Icon(
+                            Icons.insert_drive_file,
+                          ),
+                          title: const Text(
+                            "เพิ่มไฟล์",
+                          ),
+                          onTap: () {
+                            Navigator.pop(
+                              context,
+                            );
+                            pickFiles(); // ใช้ฟังก์ชันใหม่
+                          },
+                        ),
+                      ],
+                    ),
+                  );
+                },
+          );
+        },
+        child: const Icon(
+          Icons.add,
+          size: 30,
+        ),
+      ),
+    );
+  }
+}
+
+/// ----------------
+/// ชั้นใน SeriesDetailScreen
+/// ----------------
+class SeriesDetailScreen
+    extends
+        StatelessWidget {
+  final Series
+  series;
+  const SeriesDetailScreen({
+    super.key,
+    required this.series,
+  });
 
   Future<
     List<
@@ -79,7 +362,6 @@ class _HomeScreenState
     final archive = ZipDecoder().decodeBytes(
       bytes,
     );
-
     final tempDir =
         await getTemporaryDirectory();
     List<
@@ -91,16 +373,14 @@ class _HomeScreenState
     for (final file
         in archive) {
       if (file.isFile) {
-        final data =
-            file.content
-                as List<
-                  int
-                >;
         final filename = '${tempDir.path}/${file.name}';
         File(
           filename,
-        )..writeAsBytesSync(
-          data,
+        ).writeAsBytesSync(
+          file.content
+              as List<
+                int
+              >,
         );
         imageFiles.add(
           File(
@@ -109,15 +389,13 @@ class _HomeScreenState
         );
       }
     }
-
     return imageFiles;
   }
 
-  /// สร้าง preview thumbnail จากไฟล์
   Future<
     Widget
   >
-  _buildThumbnail(
+  buildThumbnail(
     String
     path,
   ) async {
@@ -129,24 +407,19 @@ class _HomeScreenState
       );
       final page = await doc.getPage(
         1,
-      ); // หน้าแรก
-
-      // ต้องใส่ width และ height
-      final pageImage = await page.render(
-        width: 300,
-        height: 400,
       );
-
+      final pageImage = await page.render(
+        width: 120,
+        height: 160,
+      );
       if (pageImage !=
           null) {
         return Image.memory(
           pageImage.bytes,
-          height: 200,
           fit: BoxFit.cover,
         );
       } else {
         return Container(
-          height: 200,
           color: Colors.grey[300],
           child: const Center(
             child: Text(
@@ -158,128 +431,18 @@ class _HomeScreenState
     } else if (path.endsWith(
       '.cbz',
     )) {
-      List<
-        File
-      >
-      images = await extractCbz(
+      final files = await extractCbz(
         path,
       );
-      if (images.isNotEmpty) {
+      if (files.isNotEmpty) {
         return Image.file(
-          images.first,
-          height: 200,
+          files.first,
           fit: BoxFit.cover,
         );
       }
     }
-
-    // fallback
     return Container(
-      height: 200,
       color: Colors.grey[300],
-      child: const Icon(
-        Icons.insert_drive_file,
-        size: 60,
-      ),
-    );
-  }
-
-  Widget
-  buildFileItem(
-    String
-    path,
-  ) {
-    String
-    fileName = path
-        .split(
-          '/',
-        )
-        .last;
-
-    return FutureBuilder<
-      Widget
-    >(
-      future: _buildThumbnail(
-        path,
-      ),
-      builder:
-          (
-            context,
-            snapshot,
-          ) {
-            return Card(
-              margin: const EdgeInsets.symmetric(
-                horizontal: 8,
-                vertical: 6,
-              ),
-              child: InkWell(
-                onTap: () async {
-                  if (path.endsWith(
-                    '.pdf',
-                  )) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (
-                              _,
-                            ) => PdfViewScreen(
-                              path: path,
-                            ),
-                      ),
-                    );
-                  } else if (path.endsWith(
-                    '.cbz',
-                  )) {
-                    List<
-                      File
-                    >
-                    images = await extractCbz(
-                      path,
-                    );
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder:
-                            (
-                              _,
-                            ) => CbzViewScreen(
-                              images: images,
-                            ),
-                      ),
-                    );
-                  }
-                },
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    snapshot.hasData
-                        ? snapshot.data!
-                        : Container(
-                            height: 200,
-                            color: Colors.grey[300],
-                            child: const Center(
-                              child: CircularProgressIndicator(),
-                            ),
-                          ),
-                    Padding(
-                      padding: const EdgeInsets.all(
-                        8.0,
-                      ),
-                      child: Text(
-                        fileName,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
     );
   }
 
@@ -291,52 +454,89 @@ class _HomeScreenState
   ) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'ชั้นหนังสือ',
+        title: Text(
+          series.title,
         ),
-        centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.edit,
-            ),
-            onPressed: () {},
-          ),
-          IconButton(
-            icon: const Icon(
-              Icons.settings,
-            ),
-            onPressed: () {},
-          ),
-        ],
       ),
-      body: filePaths.isEmpty
+      body: series.files.isEmpty
           ? const Center(
               child: Text(
-                'กดปุ่ม + เพื่อเลือกไฟล์',
+                "ไม่มีไฟล์ในซีรีส์นี้",
               ),
             )
           : ListView.builder(
-              itemCount: filePaths.length,
+              itemCount: series.files.length,
               itemBuilder:
                   (
-                    _,
+                    context,
                     index,
-                  ) => buildFileItem(
-                    filePaths[index],
-                  ),
+                  ) {
+                    final path = series.files[index];
+                    final fileName = path
+                        .split(
+                          '/',
+                        )
+                        .last;
+                    return ListTile(
+                      leading:
+                          FutureBuilder<
+                            Widget
+                          >(
+                            future: buildThumbnail(
+                              path,
+                            ),
+                            builder:
+                                (
+                                  context,
+                                  snapshot,
+                                ) {
+                                  if (snapshot.hasData) return snapshot.data!;
+                                  return const SizedBox(
+                                    width: 50,
+                                    child: CircularProgressIndicator(),
+                                  );
+                                },
+                          ),
+                      title: Text(
+                        fileName,
+                      ),
+                      onTap: () async {
+                        if (path.endsWith(
+                          '.pdf',
+                        )) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (
+                                    _,
+                                  ) => PdfViewScreen(
+                                    path: path,
+                                  ),
+                            ),
+                          );
+                        } else if (path.endsWith(
+                          '.cbz',
+                        )) {
+                          final images = await extractCbz(
+                            path,
+                          );
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (
+                                    _,
+                                  ) => CbzViewScreen(
+                                    images: images,
+                                  ),
+                            ),
+                          );
+                        }
+                      },
+                    );
+                  },
             ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => pickFile(
-          context,
-        ),
-        backgroundColor: Colors.deepPurple,
-        child: const Icon(
-          Icons.add,
-          size: 40,
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
     );
   }
 }
