@@ -97,27 +97,14 @@ class _HomeScreenState
       setState(
         () {
           if (allFiles.isNotEmpty) {
-            final existingIndex = seriesList.indexWhere(
-              (
-                s,
-              ) =>
-                  s.title ==
-                  "Playlist",
+            // ✅ ตั้งชื่อ playlist ใหม่ทุกครั้ง
+            final newTitle = "Playlist ${seriesList.length + 1}";
+            seriesList.add(
+              Series(
+                title: newTitle,
+                files: allFiles,
+              ),
             );
-
-            if (existingIndex >=
-                0) {
-              seriesList[existingIndex].files.addAll(
-                allFiles,
-              );
-            } else {
-              seriesList.add(
-                Series(
-                  title: "Playlist",
-                  files: allFiles,
-                ),
-              );
-            }
           }
         },
       );
@@ -339,7 +326,7 @@ class _HomeScreenState
 /// ----------------
 class SeriesDetailScreen
     extends
-        StatelessWidget {
+        StatefulWidget {
   final Series
   series;
   const SeriesDetailScreen({
@@ -347,6 +334,19 @@ class SeriesDetailScreen
     required this.series,
   });
 
+  @override
+  State<
+    SeriesDetailScreen
+  >
+  createState() =>
+      _SeriesDetailScreenState();
+}
+
+class _SeriesDetailScreenState
+    extends
+        State<
+          SeriesDetailScreen
+        > {
   Future<
     List<
       File
@@ -393,6 +393,46 @@ class SeriesDetailScreen
   }
 
   Future<
+    void
+  >
+  addFilesToPlaylist() async {
+    FilePickerResult?
+    result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      type: FileType.custom,
+      allowedExtensions: [
+        'pdf',
+        'cbz',
+      ],
+      allowCompression: false,
+      withData: false,
+    );
+
+    if (result !=
+        null) {
+      List<
+        String
+      >
+      newFiles = [];
+      for (var file in result.files) {
+        if (file.path !=
+            null)
+          newFiles.add(
+            file.path!,
+          );
+      }
+
+      setState(
+        () {
+          widget.series.files.addAll(
+            newFiles,
+          ); // ✅ เพิ่มไฟล์เข้า playlist นี้
+        },
+      );
+    }
+  }
+
+  Future<
     Widget
   >
   buildThumbnail(
@@ -417,15 +457,6 @@ class SeriesDetailScreen
         return Image.memory(
           pageImage.bytes,
           fit: BoxFit.cover,
-        );
-      } else {
-        return Container(
-          color: Colors.grey[300],
-          child: const Center(
-            child: Text(
-              "โหลดภาพไม่ได้",
-            ),
-          ),
         );
       }
     } else if (path.endsWith(
@@ -455,23 +486,23 @@ class SeriesDetailScreen
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          series.title,
+          widget.series.title,
         ),
       ),
-      body: series.files.isEmpty
+      body: widget.series.files.isEmpty
           ? const Center(
               child: Text(
                 "ไม่มีไฟล์ในซีรีส์นี้",
               ),
             )
           : ListView.builder(
-              itemCount: series.files.length,
+              itemCount: widget.series.files.length,
               itemBuilder:
                   (
                     context,
                     index,
                   ) {
-                    final path = series.files[index];
+                    final path = widget.series.files[index];
                     final fileName = path
                         .split(
                           '/',
@@ -537,6 +568,13 @@ class SeriesDetailScreen
                     );
                   },
             ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: addFilesToPlaylist, // ✅ ปุ่ม + เพิ่มไฟล์
+        backgroundColor: Colors.deepPurple,
+        child: const Icon(
+          Icons.add,
+        ),
+      ),
     );
   }
 }
