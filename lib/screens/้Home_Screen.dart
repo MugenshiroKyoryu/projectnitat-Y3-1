@@ -151,38 +151,87 @@ class _HomeScreenState
     } else if (path.endsWith(
       '.cbz',
     )) {
-      final bytes = File(
+      final files = await _extractCbzForThumbnail(
         path,
-      ).readAsBytesSync();
-      final archive = ZipDecoder().decodeBytes(
-        bytes,
       );
-      final tempDir = await getTemporaryDirectory();
-
-      for (final file in archive) {
-        if (file.isFile) {
-          final filename = '${tempDir.path}/${file.name}';
-          File(
-            filename,
-          ).writeAsBytesSync(
-            file.content
-                as List<
-                  int
-                >,
-          );
-          return Image.file(
-            File(
-              filename,
-            ),
-            fit: BoxFit.cover,
-          );
-        }
+      if (files.isNotEmpty) {
+        return Image.file(
+          files.first,
+          fit: BoxFit.cover,
+        );
       }
     }
 
     return Container(
       color: Colors.grey[300],
     );
+  }
+
+  /// ฟังก์ชัน extract เฉพาะสำหรับ thumbnail (เอาแค่ไฟล์แรก)
+  Future<
+    List<
+      File
+    >
+  >
+  _extractCbzForThumbnail(
+    String
+    cbzPath,
+  ) async {
+    final bytes = await File(
+      cbzPath,
+    ).readAsBytes();
+    final archive = ZipDecoder().decodeBytes(
+      bytes,
+    );
+    final tempDir =
+        await getTemporaryDirectory();
+
+    final cbzName = cbzPath
+        .split(
+          '/',
+        )
+        .last
+        .replaceAll(
+          '.cbz',
+          '',
+        );
+    final extractDir = Directory(
+      '${tempDir.path}/$cbzName-thumb',
+    );
+    if (!await extractDir.exists()) {
+      await extractDir.create(
+        recursive: true,
+      );
+    }
+
+    List<
+      File
+    >
+    imageFiles =
+        [];
+    for (final file
+        in archive) {
+      if (file.isFile) {
+        final filename = '${extractDir.path}/${file.name}';
+        final outFile = File(
+          filename,
+        );
+        await outFile.create(
+          recursive: true,
+        );
+        await outFile.writeAsBytes(
+          file.content
+              as List<
+                int
+              >,
+        );
+        imageFiles.add(
+          outFile,
+        );
+        break; // ✅ เอาแค่ไฟล์แรกพอทำ thumbnail
+      }
+    }
+    return imageFiles;
   }
 
   @override
@@ -356,36 +405,57 @@ class _SeriesDetailScreenState
     String
     cbzPath,
   ) async {
-    final bytes = File(
+    final bytes = await File(
       cbzPath,
-    ).readAsBytesSync();
+    ).readAsBytes();
     final archive = ZipDecoder().decodeBytes(
       bytes,
     );
     final tempDir =
         await getTemporaryDirectory();
+
+    // ✅ แยกโฟลเดอร์เฉพาะแต่ละ cbz
+    final cbzName = cbzPath
+        .split(
+          '/',
+        )
+        .last
+        .replaceAll(
+          '.cbz',
+          '',
+        );
+    final extractDir = Directory(
+      '${tempDir.path}/$cbzName',
+    );
+    if (!await extractDir.exists()) {
+      await extractDir.create(
+        recursive: true,
+      );
+    }
+
     List<
       File
     >
     imageFiles =
         [];
-
     for (final file
         in archive) {
       if (file.isFile) {
-        final filename = '${tempDir.path}/${file.name}';
-        File(
+        final filename = '${extractDir.path}/${file.name}';
+        final outFile = File(
           filename,
-        ).writeAsBytesSync(
+        );
+        await outFile.create(
+          recursive: true,
+        );
+        await outFile.writeAsBytes(
           file.content
               as List<
                 int
               >,
         );
         imageFiles.add(
-          File(
-            filename,
-          ),
+          outFile,
         );
       }
     }
