@@ -192,6 +192,88 @@ class _CbzViewScreenState
     }
   }
 
+  /// แสดงเมนูรายชื่อตอนทั้งหมด
+  void
+  showChaptersMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(
+            16,
+          ),
+        ),
+      ),
+      builder:
+          (
+            context,
+          ) {
+            return ListView.separated(
+              shrinkWrap: true,
+              itemCount: widget.series.files.length,
+              separatorBuilder:
+                  (
+                    context,
+                    index,
+                  ) => Divider(
+                    color: Colors.grey[700],
+                    height: 1,
+                  ),
+              itemBuilder:
+                  (
+                    context,
+                    index,
+                  ) {
+                    final chapterName = "Chapter ${index + 1}";
+                    final isCurrent =
+                        index ==
+                        currentIndex;
+
+                    return ListTile(
+                      leading: Text(
+                        "${index + 1}",
+                        style: const TextStyle(
+                          color: Colors.white,
+                        ),
+                      ),
+                      title: Text(
+                        chapterName,
+                        style: TextStyle(
+                          color: isCurrent
+                              ? Colors.orange
+                              : Colors.white,
+                          fontWeight: isCurrent
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      ),
+                      onTap: () async {
+                        Navigator.pop(
+                          context,
+                        ); // ปิดเมนู
+                        final selectedPath = widget.series.files[index];
+                        if (selectedPath.endsWith(
+                          ".cbz",
+                        )) {
+                          final images = await extractCbz(
+                            selectedPath,
+                          );
+                          setState(
+                            () {
+                              currentIndex = index;
+                              currentImages = images;
+                            },
+                          );
+                        }
+                      },
+                    );
+                  },
+            );
+          },
+    );
+  }
+
   @override
   Widget
   build(
@@ -209,34 +291,73 @@ class _CbzViewScreenState
         title: Text(
           fileName,
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.arrow_back,
-            ),
-            tooltip: "ตอนก่อนหน้า",
-            onPressed: goToPrevious,
+      ),
+      body: Stack(
+        children: [
+          // เนื้อหาหลัก (รูปการ์ตูน)
+          ListView.builder(
+            itemCount: currentImages.length,
+            itemBuilder:
+                (
+                  context,
+                  index,
+                ) {
+                  return Image.file(
+                    currentImages[index],
+                  );
+                },
           ),
-          IconButton(
-            icon: const Icon(
-              Icons.arrow_forward,
+
+          // ปุ่มควบคุมซ้ายล่าง
+          Positioned(
+            left: 20,
+            bottom: 20,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(
+                12,
+              ),
+              child: Row(
+                children: [
+                  // ปุ่มเมนู (สีส้ม)
+                  Container(
+                    color: Colors.orange,
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.menu,
+                        color: Colors.white,
+                      ),
+                      onPressed: showChaptersMenu,
+                    ),
+                  ),
+
+                  // ปุ่มย้อนกลับ (พื้นหลังเทาเข้ม)
+                  Container(
+                    color: Colors.grey[850],
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.arrow_back,
+                        color: Colors.white,
+                      ),
+                      onPressed: goToPrevious,
+                    ),
+                  ),
+
+                  // ปุ่มถัดไป (พื้นหลังเทาเข้ม)
+                  Container(
+                    color: Colors.grey[850],
+                    child: IconButton(
+                      icon: const Icon(
+                        Icons.arrow_forward,
+                        color: Colors.white,
+                      ),
+                      onPressed: goToNext,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            tooltip: "ตอนถัดไป",
-            onPressed: goToNext,
           ),
         ],
-      ),
-      body: ListView.builder(
-        itemCount: currentImages.length,
-        itemBuilder:
-            (
-              context,
-              index,
-            ) {
-              return Image.file(
-                currentImages[index],
-              );
-            },
       ),
     );
   }
