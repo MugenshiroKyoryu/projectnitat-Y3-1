@@ -286,35 +286,50 @@ class _HomeScreenState
                       child: Column(
                         children: [
                           Expanded(
-                            child: series.files.isNotEmpty
-                                ? FutureBuilder<
-                                    Widget
-                                  >(
-                                    future: buildThumbnail(
-                                      series.files.first,
+                            child: Stack(
+                              children: [
+                                FutureBuilder<
+                                  Widget
+                                >(
+                                  future: buildThumbnail(
+                                    series.files.first,
+                                  ),
+                                  builder:
+                                      (
+                                        context,
+                                        snapshot,
+                                      ) {
+                                        if (snapshot.hasData) return snapshot.data!;
+                                        return Container(
+                                          color: Colors.grey[300],
+                                          child: const Center(
+                                            child: CircularProgressIndicator(),
+                                          ),
+                                        );
+                                      },
+                                ),
+                                // 🔴 ปุ่มลบเพลย์ลิส
+                                Positioned(
+                                  top: 4,
+                                  right: 4,
+                                  child: IconButton(
+                                    icon: const Icon(
+                                      Icons.delete,
+                                      color: Colors.red,
                                     ),
-                                    builder:
-                                        (
-                                          context,
-                                          snapshot,
-                                        ) {
-                                          if (snapshot.hasData) return snapshot.data!;
-                                          return Container(
-                                            color: Colors.grey[300],
-                                            child: const Center(
-                                              child: CircularProgressIndicator(),
-                                            ),
+                                    onPressed: () {
+                                      setState(
+                                        () {
+                                          seriesList.removeAt(
+                                            index,
                                           );
                                         },
-                                  )
-                                : Container(
-                                    color: Colors.grey[300],
-                                    child: const Center(
-                                      child: Text(
-                                        "ไม่มีไฟล์",
-                                      ),
-                                    ),
+                                      );
+                                    },
                                   ),
+                                ),
+                              ],
+                            ),
                           ),
                           const SizedBox(
                             height: 5,
@@ -601,6 +616,21 @@ class _SeriesDetailScreenState
                       title: Text(
                         fileName,
                       ),
+                      trailing: IconButton(
+                        icon: const Icon(
+                          Icons.delete,
+                          color: Colors.red,
+                        ),
+                        onPressed: () {
+                          setState(
+                            () {
+                              widget.series.files.removeAt(
+                                index,
+                              ); // 🔴 ลบไฟล์ออกจาก playlist
+                            },
+                          );
+                        },
+                      ),
                       onTap: () async {
                         if (path.endsWith(
                           '.pdf',
@@ -622,6 +652,7 @@ class _SeriesDetailScreenState
                           final images = await extractCbz(
                             path,
                           );
+
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -629,6 +660,8 @@ class _SeriesDetailScreenState
                                   (
                                     _,
                                   ) => CbzViewScreen(
+                                    series: widget.series,
+                                    currentIndex: index, // ✅ ส่ง index ปัจจุบันไปด้วย
                                     images: images,
                                   ),
                             ),
