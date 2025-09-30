@@ -6,9 +6,9 @@ import 'package:archive/archive_io.dart';
 import 'package:pdfx/pdfx.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import 'package:workshopfinal/models/data.dart';
 import 'PdfViewScreen.dart';
 import 'CbzViewScreen.dart';
-import 'package:workshopfinal/models/data.dart';
 
 /// ----------------
 /// ชั้นนอก HomeScreen
@@ -38,8 +38,15 @@ class _HomeScreenState
   >
   seriesList =
       [];
+  List<
+    bool
+  >
+  selectedSeries =
+      [];
+  bool
+  isSelectionMode =
+      false;
 
-  /// ขอ permission สำหรับอ่านไฟล์
   Future<
     void
   >
@@ -59,7 +66,6 @@ class _HomeScreenState
     }
   }
 
-  /// เลือกหลายไฟล์แล้วรวมไว้ใน Playlist เดียว
   Future<
     void
   >
@@ -97,7 +103,6 @@ class _HomeScreenState
       setState(
         () {
           if (allFiles.isNotEmpty) {
-            // ✅ ตั้งชื่อ playlist ใหม่ทุกครั้ง
             final newTitle = "Playlist ${seriesList.length + 1}";
             seriesList.add(
               Series(
@@ -105,13 +110,15 @@ class _HomeScreenState
                 files: allFiles,
               ),
             );
+            selectedSeries.add(
+              false,
+            );
           }
         },
       );
     }
   }
 
-  /// สร้าง thumbnail จากไฟล์ PDF หรือ CBZ
   Future<
     Widget
   >
@@ -161,13 +168,11 @@ class _HomeScreenState
         );
       }
     }
-
     return Container(
       color: Colors.grey[300],
     );
   }
 
-  /// ฟังก์ชัน extract เฉพาะสำหรับ thumbnail (เอาแค่ไฟล์แรก)
   Future<
     List<
       File
@@ -228,7 +233,7 @@ class _HomeScreenState
         imageFiles.add(
           outFile,
         );
-        break; // ✅ เอาแค่ไฟล์แรกพอทำ thumbnail
+        break; // เอาแค่ไฟล์แรก
       }
     }
     return imageFiles;
@@ -242,9 +247,75 @@ class _HomeScreenState
   ) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "ชั้นหนังสือ",
+        title: Text(
+          isSelectionMode
+              ? "${selectedSeries.where((e) => e).length} Selected"
+              : "ชั้นหนังสือ",
         ),
+        actions: [
+          if (isSelectionMode)
+            IconButton(
+              icon: const Icon(
+                Icons.delete,
+              ),
+              onPressed: () {
+                setState(
+                  () {
+                    final toRemove =
+                        <
+                          int
+                        >[];
+                    for (
+                      int i = 0;
+                      i <
+                          selectedSeries.length;
+                      i++
+                    ) {
+                      if (selectedSeries[i]) {
+                        toRemove.add(
+                          i,
+                        );
+                      }
+                    }
+                    toRemove.sort(
+                      (
+                        a,
+                        b,
+                      ) => b.compareTo(
+                        a,
+                      ),
+                    );
+                    for (final index in toRemove) {
+                      seriesList.removeAt(
+                        index,
+                      );
+                      selectedSeries.removeAt(
+                        index,
+                      );
+                    }
+                    isSelectionMode = false;
+                  },
+                );
+              },
+            ),
+          if (isSelectionMode)
+            IconButton(
+              icon: const Icon(
+                Icons.close,
+              ),
+              onPressed: () {
+                setState(
+                  () {
+                    isSelectionMode = false;
+                    selectedSeries = List.filled(
+                      seriesList.length,
+                      false,
+                    );
+                  },
+                );
+              },
+            ),
+        ],
       ),
       body: seriesList.isEmpty
           ? const Center(
@@ -269,76 +340,96 @@ class _HomeScreenState
                     index,
                   ) {
                     final series = seriesList[index];
+                    final isSelected =
+                        selectedSeries.length >
+                            index &&
+                        selectedSeries[index];
+
                     return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder:
-                                (
-                                  _,
-                                ) => SeriesDetailScreen(
-                                  series: series,
-                                ),
-                          ),
+                      onLongPress: () {
+                        setState(
+                          () {
+                            isSelectionMode = true;
+                            selectedSeries[index] = true;
+                          },
                         );
                       },
-                      child: Column(
-                        children: [
-                          Expanded(
-                            child: Stack(
-                              children: [
-                                FutureBuilder<
-                                  Widget
-                                >(
-                                  future: buildThumbnail(
-                                    series.files.first,
+                      onTap: () {
+                        if (isSelectionMode) {
+                          setState(
+                            () {
+                              selectedSeries[index] = !selectedSeries[index];
+                            },
+                          );
+                        } else {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder:
+                                  (
+                                    _,
+                                  ) => SeriesDetailScreen(
+                                    series: series,
                                   ),
-                                  builder:
-                                      (
-                                        context,
-                                        snapshot,
-                                      ) {
-                                        if (snapshot.hasData) return snapshot.data!;
-                                        return Container(
-                                          color: Colors.grey[300],
-                                          child: const Center(
-                                            child: CircularProgressIndicator(),
-                                          ),
-                                        );
-                                      },
-                                ),
-                                // 🔴 ปุ่มลบเพลย์ลิส
-                                Positioned(
-                                  top: 4,
-                                  right: 4,
-                                  child: IconButton(
-                                    icon: const Icon(
-                                      Icons.delete,
-                                      color: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                      child: Stack(
+                        children: [
+                          Column(
+                            children: [
+                              Expanded(
+                                child:
+                                    FutureBuilder<
+                                      Widget
+                                    >(
+                                      future: buildThumbnail(
+                                        series.files.first,
+                                      ),
+                                      builder:
+                                          (
+                                            context,
+                                            snapshot,
+                                          ) {
+                                            if (snapshot.hasData) return snapshot.data!;
+                                            return Container(
+                                              color: Colors.grey[300],
+                                              child: const Center(
+                                                child: CircularProgressIndicator(),
+                                              ),
+                                            );
+                                          },
                                     ),
-                                    onPressed: () {
+                              ),
+                              const SizedBox(
+                                height: 5,
+                              ),
+                              Text(
+                                series.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                          if (isSelectionMode)
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: Checkbox(
+                                value: isSelected,
+                                onChanged:
+                                    (
+                                      value,
+                                    ) {
                                       setState(
                                         () {
-                                          seriesList.removeAt(
-                                            index,
-                                          );
+                                          selectedSeries[index] = value!;
                                         },
                                       );
                                     },
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
-                          ),
-                          const SizedBox(
-                            height: 5,
-                          ),
-                          Text(
-                            series.title,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
                         ],
                       ),
                     );
@@ -367,7 +458,7 @@ class _HomeScreenState
                             Navigator.pop(
                               context,
                             );
-                            pickFiles(); // ใช้ฟังก์ชันใหม่
+                            pickFiles();
                           },
                         ),
                       ],
@@ -429,7 +520,6 @@ class _SeriesDetailScreenState
     final tempDir =
         await getTemporaryDirectory();
 
-    // ✅ แยกโฟลเดอร์เฉพาะแต่ละ cbz
     final cbzName = cbzPath
         .split(
           '/',
@@ -511,7 +601,7 @@ class _SeriesDetailScreenState
         () {
           widget.series.files.addAll(
             newFiles,
-          ); // ✅ เพิ่มไฟล์เข้า playlist นี้
+          );
         },
       );
     }
@@ -626,7 +716,7 @@ class _SeriesDetailScreenState
                             () {
                               widget.series.files.removeAt(
                                 index,
-                              ); // 🔴 ลบไฟล์ออกจาก playlist
+                              );
                             },
                           );
                         },
@@ -652,7 +742,6 @@ class _SeriesDetailScreenState
                           final images = await extractCbz(
                             path,
                           );
-
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -661,7 +750,7 @@ class _SeriesDetailScreenState
                                     _,
                                   ) => CbzViewScreen(
                                     series: widget.series,
-                                    currentIndex: index, // ✅ ส่ง index ปัจจุบันไปด้วย
+                                    currentIndex: index,
                                     images: images,
                                   ),
                             ),
@@ -672,7 +761,7 @@ class _SeriesDetailScreenState
                   },
             ),
       floatingActionButton: FloatingActionButton(
-        onPressed: addFilesToPlaylist, // ✅ ปุ่ม + เพิ่มไฟล์
+        onPressed: addFilesToPlaylist,
         backgroundColor: Colors.deepPurple,
         child: const Icon(
           Icons.add,
