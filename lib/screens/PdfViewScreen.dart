@@ -33,10 +33,12 @@ class _PdfViewScreenState
   late PdfControllerPinch
   _pdfController;
   int
-  _pagesCount =
+      // ignore: unused_field
+      _pagesCount =
       0;
   int
-  _currentPage =
+      // ignore: unused_field
+      _currentPage =
       1;
   bool
   _isUiVisible =
@@ -178,11 +180,9 @@ class _PdfViewScreenState
                     context,
                     index,
                   ) {
-                    final fileName = widget.playlist[index]
-                        .split(
-                          '/',
-                        )
-                        .last;
+                    final isCurrent =
+                        widget.path ==
+                        widget.playlist[index];
                     return ListTile(
                       leading: Text(
                         "${index + 1}",
@@ -191,9 +191,14 @@ class _PdfViewScreenState
                         ),
                       ),
                       title: Text(
-                        fileName,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        "Chapter ${index + 1}",
+                        style: TextStyle(
+                          color: isCurrent
+                              ? Colors.orange
+                              : Colors.white,
+                          fontWeight: isCurrent
+                              ? FontWeight.bold
+                              : FontWeight.normal,
                         ),
                       ),
                       onTap: () {
