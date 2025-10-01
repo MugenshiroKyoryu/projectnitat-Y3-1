@@ -6,8 +6,14 @@ class PdfViewScreen
         StatefulWidget {
   final String
   path;
+  final List<
+    String
+  >
+  playlist;
+
   const PdfViewScreen({
     required this.path,
+    required this.playlist,
     super.key,
   });
 
@@ -34,7 +40,7 @@ class _PdfViewScreenState
       1;
   bool
   _isUiVisible =
-      true; // ✅ ใช้แทน _showButtons
+      true;
 
   @override
   void
@@ -69,12 +75,25 @@ class _PdfViewScreenState
     void
   >
   goToNext() async {
-    if (_currentPage <
-        _pagesCount) {
-      _pdfController.nextPage(
-        curve: Curves.ease,
-        duration: const Duration(
-          milliseconds: 300,
+    final currentIndex = widget.playlist.indexOf(
+      widget.path,
+    );
+    if (currentIndex <
+        widget.playlist.length -
+            1) {
+      final nextPath =
+          widget.playlist[currentIndex +
+              1];
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder:
+              (
+                _,
+              ) => PdfViewScreen(
+                path: nextPath,
+                playlist: widget.playlist,
+              ),
         ),
       );
     } else {
@@ -83,7 +102,7 @@ class _PdfViewScreenState
       ).showSnackBar(
         const SnackBar(
           content: Text(
-            "นี่คือหน้าสุดท้ายแล้ว",
+            "นี่คือไฟล์สุดท้ายแล้ว",
           ),
         ),
       );
@@ -94,12 +113,24 @@ class _PdfViewScreenState
     void
   >
   goToPrevious() async {
-    if (_currentPage >
-        1) {
-      _pdfController.previousPage(
-        curve: Curves.ease,
-        duration: const Duration(
-          milliseconds: 300,
+    final currentIndex = widget.playlist.indexOf(
+      widget.path,
+    );
+    if (currentIndex >
+        0) {
+      final prevPath =
+          widget.playlist[currentIndex -
+              1];
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder:
+              (
+                _,
+              ) => PdfViewScreen(
+                path: prevPath,
+                playlist: widget.playlist,
+              ),
         ),
       );
     } else {
@@ -108,7 +139,7 @@ class _PdfViewScreenState
       ).showSnackBar(
         const SnackBar(
           content: Text(
-            "นี่คือหน้าแรกแล้ว",
+            "นี่คือไฟล์แรกแล้ว",
           ),
         ),
       );
@@ -133,7 +164,7 @@ class _PdfViewScreenState
           ) {
             return ListView.separated(
               shrinkWrap: true,
-              itemCount: _pagesCount,
+              itemCount: widget.playlist.length,
               separatorBuilder:
                   (
                     context,
@@ -147,37 +178,39 @@ class _PdfViewScreenState
                     context,
                     index,
                   ) {
-                    final pageNum =
-                        index +
-                        1;
-                    final isCurrent =
-                        pageNum ==
-                        _currentPage;
-
+                    final fileName = widget.playlist[index]
+                        .split(
+                          '/',
+                        )
+                        .last;
                     return ListTile(
                       leading: Text(
-                        "$pageNum",
+                        "${index + 1}",
                         style: const TextStyle(
                           color: Colors.white,
                         ),
                       ),
                       title: Text(
-                        "Page $pageNum",
-                        style: TextStyle(
-                          color: isCurrent
-                              ? Colors.orange
-                              : Colors.white,
-                          fontWeight: isCurrent
-                              ? FontWeight.bold
-                              : FontWeight.normal,
+                        fileName,
+                        style: const TextStyle(
+                          color: Colors.white,
                         ),
                       ),
                       onTap: () {
                         Navigator.pop(
                           context,
                         );
-                        _pdfController.jumpToPage(
-                          pageNum,
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (
+                                  _,
+                                ) => PdfViewScreen(
+                                  path: widget.playlist[index],
+                                  playlist: widget.playlist,
+                                ),
+                          ),
                         );
                       },
                     );
@@ -203,7 +236,7 @@ class _PdfViewScreenState
       onTap: () {
         setState(
           () {
-            _isUiVisible = !_isUiVisible; // ✅ แตะเพื่อซ่อน/โชว์ UI
+            _isUiVisible = !_isUiVisible;
           },
         );
       },
@@ -230,8 +263,6 @@ class _PdfViewScreenState
                     );
                   },
             ),
-
-            // ✅ ปุ่ม 3 ปุ่มซ้ายล่าง (เหมือน CbzViewScreen)
             if (_isUiVisible)
               Positioned(
                 left: 20,

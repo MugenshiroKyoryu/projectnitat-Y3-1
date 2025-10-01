@@ -733,6 +733,7 @@ class _SeriesDetailScreenState
                                     _,
                                   ) => PdfViewScreen(
                                     path: path,
+                                    playlist: widget.series.files, // ✅ ส่ง Playlist
                                   ),
                             ),
                           );
