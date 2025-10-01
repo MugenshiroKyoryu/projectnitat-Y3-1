@@ -25,6 +25,7 @@ class MyApp
   ) {
     return MaterialApp(
       title: 'OPREADERS',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.deepPurple,

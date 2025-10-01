@@ -8,13 +8,13 @@ class CbzViewScreen
     extends
         StatefulWidget {
   final Series
-  series; // ✅ เพลย์ลิสที่มีไฟล์ cbz หลายตอน
+  series;
   final int
-  currentIndex; // ✅ ตอนที่เปิดอยู่
+  currentIndex;
   final List<
     File
   >
-  images; // ✅ รูปใน cbz ตอนนี้
+  images;
 
   const CbzViewScreen({
     super.key,
@@ -43,6 +43,10 @@ class _CbzViewScreenState
   >
   currentImages;
 
+  bool
+  _isUiVisible =
+      true; // ✅ ใช้ควบคุมการซ่อน/แสดง UI
+
   @override
   void
   initState() {
@@ -53,7 +57,6 @@ class _CbzViewScreenState
         widget.images;
   }
 
-  /// ฟังก์ชัน extract CBZ (อ่านไฟล์ cbz แล้วแปลงเป็นรูป)
   Future<
     List<
       File
@@ -119,7 +122,6 @@ class _CbzViewScreenState
     return imageFiles;
   }
 
-  /// ไปตอนถัดไป
   Future<
     void
   >
@@ -156,7 +158,6 @@ class _CbzViewScreenState
     }
   }
 
-  /// ไปตอนก่อนหน้า
   Future<
     void
   >
@@ -192,7 +193,6 @@ class _CbzViewScreenState
     }
   }
 
-  /// แสดงเมนูรายชื่อตอนทั้งหมด
   void
   showChaptersMenu() {
     showModalBottomSheet(
@@ -251,7 +251,7 @@ class _CbzViewScreenState
                       onTap: () async {
                         Navigator.pop(
                           context,
-                        ); // ปิดเมนู
+                        );
                         final selectedPath = widget.series.files[index];
                         if (selectedPath.endsWith(
                           ".cbz",
@@ -286,78 +286,85 @@ class _CbzViewScreenState
         )
         .last;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          fileName,
-        ),
-      ),
-      body: Stack(
-        children: [
-          // เนื้อหาหลัก (รูปการ์ตูน)
-          ListView.builder(
-            itemCount: currentImages.length,
-            itemBuilder:
-                (
-                  context,
-                  index,
-                ) {
-                  return Image.file(
-                    currentImages[index],
-                  );
-                },
-          ),
-
-          // ปุ่มควบคุมซ้ายล่าง
-          Positioned(
-            left: 20,
-            bottom: 20,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(
-                12,
-              ),
-              child: Row(
-                children: [
-                  // ปุ่มเมนู (สีส้ม)
-                  Container(
-                    color: Colors.orange,
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.menu,
-                        color: Colors.white,
-                      ),
-                      onPressed: showChaptersMenu,
-                    ),
-                  ),
-
-                  // ปุ่มย้อนกลับ (พื้นหลังเทาเข้ม)
-                  Container(
-                    color: Colors.grey[850],
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.arrow_back,
-                        color: Colors.white,
-                      ),
-                      onPressed: goToPrevious,
-                    ),
-                  ),
-
-                  // ปุ่มถัดไป (พื้นหลังเทาเข้ม)
-                  Container(
-                    color: Colors.grey[850],
-                    child: IconButton(
-                      icon: const Icon(
-                        Icons.arrow_forward,
-                        color: Colors.white,
-                      ),
-                      onPressed: goToNext,
-                    ),
-                  ),
-                ],
-              ),
+    return GestureDetector(
+      onTap: () {
+        setState(
+          () {
+            _isUiVisible = !_isUiVisible; // ✅ แตะเพื่อซ่อน/โชว์ UI
+          },
+        );
+      },
+      child: Scaffold(
+        appBar: _isUiVisible
+            ? AppBar(
+                title: Text(
+                  fileName,
+                ),
+              )
+            : null, // ✅ ซ่อน AppBar เมื่อ _isUiVisible = false
+        body: Stack(
+          children: [
+            // เนื้อหาหลัก (รูปการ์ตูน)
+            ListView.builder(
+              itemCount: currentImages.length,
+              itemBuilder:
+                  (
+                    context,
+                    index,
+                  ) {
+                    return Image.file(
+                      currentImages[index],
+                    );
+                  },
             ),
-          ),
-        ],
+
+            // ✅ ปุ่ม 3 ปุ่มซ้ายล่าง (ตำแหน่งเดิม)
+            if (_isUiVisible)
+              Positioned(
+                left: 20,
+                bottom: 20,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(
+                    12,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        color: Colors.orange,
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.menu,
+                            color: Colors.white,
+                          ),
+                          onPressed: showChaptersMenu,
+                        ),
+                      ),
+                      Container(
+                        color: Colors.grey[850],
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
+                          ),
+                          onPressed: goToPrevious,
+                        ),
+                      ),
+                      Container(
+                        color: Colors.grey[850],
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.arrow_forward,
+                            color: Colors.white,
+                          ),
+                          onPressed: goToNext,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

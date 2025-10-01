@@ -33,8 +33,8 @@ class _PdfViewScreenState
   _currentPage =
       1;
   bool
-  _showButtons =
-      false;
+  _isUiVisible =
+      true; // ✅ ใช้แทน _showButtons
 
   @override
   void
@@ -58,18 +58,133 @@ class _PdfViewScreenState
     });
   }
 
-  void
-  _toggleButtons() {
-    setState(() {
-      _showButtons = !_showButtons;
-    });
-  }
-
   @override
   void
   dispose() {
     _pdfController.dispose();
     super.dispose();
+  }
+
+  Future<
+    void
+  >
+  goToNext() async {
+    if (_currentPage <
+        _pagesCount) {
+      _pdfController.nextPage(
+        curve: Curves.ease,
+        duration: const Duration(
+          milliseconds: 300,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "นี่คือหน้าสุดท้ายแล้ว",
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<
+    void
+  >
+  goToPrevious() async {
+    if (_currentPage >
+        1) {
+      _pdfController.previousPage(
+        curve: Curves.ease,
+        duration: const Duration(
+          milliseconds: 300,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "นี่คือหน้าแรกแล้ว",
+          ),
+        ),
+      );
+    }
+  }
+
+  void
+  showChaptersMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.grey[900],
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(
+            16,
+          ),
+        ),
+      ),
+      builder:
+          (
+            context,
+          ) {
+            return ListView.separated(
+              shrinkWrap: true,
+              itemCount: _pagesCount,
+              separatorBuilder:
+                  (
+                    context,
+                    index,
+                  ) => Divider(
+                    color: Colors.grey[700],
+                    height: 1,
+                  ),
+              itemBuilder:
+                  (
+                    context,
+                    index,
+                  ) {
+                    final pageNum =
+                        index +
+                        1;
+                    final isCurrent =
+                        pageNum ==
+                        _currentPage;
+
+                    return ListTile(
+                      leading: Text(
+                        "$pageNum",
+                        style: const TextStyle(
+                          color: Colors.white,
+                        ),
+                      ),
+                      title: Text(
+                        "Page $pageNum",
+                        style: TextStyle(
+                          color: isCurrent
+                              ? Colors.orange
+                              : Colors.white,
+                          fontWeight: isCurrent
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      ),
+                      onTap: () {
+                        Navigator.pop(
+                          context,
+                        );
+                        _pdfController.jumpToPage(
+                          pageNum,
+                        );
+                      },
+                    );
+                  },
+            );
+          },
+    );
   }
 
   @override
@@ -78,15 +193,29 @@ class _PdfViewScreenState
     BuildContext
     context,
   ) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          "PDF Viewer",
-        ),
-      ),
-      body: GestureDetector(
-        onTap: _toggleButtons,
-        child: Stack(
+    final fileName = widget.path
+        .split(
+          '/',
+        )
+        .last;
+
+    return GestureDetector(
+      onTap: () {
+        setState(
+          () {
+            _isUiVisible = !_isUiVisible; // ✅ แตะเพื่อซ่อน/โชว์ UI
+          },
+        );
+      },
+      child: Scaffold(
+        appBar: _isUiVisible
+            ? AppBar(
+                title: Text(
+                  fileName,
+                ),
+              )
+            : null,
+        body: Stack(
           children: [
             PdfViewPinch(
               controller: _pdfController,
@@ -97,101 +226,56 @@ class _PdfViewScreenState
                     setState(
                       () {
                         _currentPage = page;
-                        // ถ้าเป็นหน้าสุดท้าย ให้โชว์ปุ่มโดยอัตโนมัติ
-                        if (_currentPage ==
-                            _pagesCount) {
-                          _showButtons = true;
-                        }
                       },
                     );
                   },
             ),
-            if (_showButtons) // แสดงปุ่มเมื่อ _showButtons = true
+
+            // ✅ ปุ่ม 3 ปุ่มซ้ายล่าง (เหมือน CbzViewScreen)
+            if (_isUiVisible)
               Positioned(
+                left: 20,
                 bottom: 20,
-                left: 0,
-                right: 0,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        _customButton(
-                          "ตอนก่อนหน้า",
-                          Icons.arrow_back,
-                          () {
-                            _pdfController.previousPage(
-                              curve: Curves.ease,
-                              duration: const Duration(
-                                milliseconds: 300,
-                              ),
-                            );
-                          },
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(
+                    12,
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        color: Colors.orange,
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.menu,
+                            color: Colors.white,
+                          ),
+                          onPressed: showChaptersMenu,
                         ),
-                        const SizedBox(
-                          width: 10,
+                      ),
+                      Container(
+                        color: Colors.grey[850],
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
+                          ),
+                          onPressed: goToPrevious,
                         ),
-                        _customButton(
-                          "ตอนต่อไป",
-                          Icons.arrow_forward,
-                          () {
-                            _pdfController.nextPage(
-                              curve: Curves.ease,
-                              duration: const Duration(
-                                milliseconds: 300,
-                              ),
-                            );
-                          },
+                      ),
+                      Container(
+                        color: Colors.grey[850],
+                        child: IconButton(
+                          icon: const Icon(
+                            Icons.arrow_forward,
+                            color: Colors.white,
+                          ),
+                          onPressed: goToNext,
                         ),
-                      ],
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget
-  _customButton(
-    String
-    label,
-    IconData
-    icon,
-    VoidCallback
-    onTap,
-  ) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 8,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade700,
-        borderRadius: BorderRadius.circular(
-          8,
-        ),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color: Colors.white,
-            ),
-            const SizedBox(
-              width: 5,
-            ),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-              ),
-            ),
           ],
         ),
       ),
