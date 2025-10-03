@@ -1,6 +1,6 @@
 class Series {
-  final String
-  title;
+  String
+  title; // เอา final ออก
   final List<
     String
   >

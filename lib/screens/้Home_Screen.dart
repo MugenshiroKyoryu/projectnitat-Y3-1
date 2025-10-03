@@ -6,13 +6,10 @@ import 'package:archive/archive_io.dart';
 import 'package:pdfx/pdfx.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import 'package:workshopfinal/models/data.dart';
 import 'PdfViewScreen.dart';
 import 'CbzViewScreen.dart';
+import 'package:workshopfinal/models/data.dart';
 
-/// ----------------
-/// ชั้นนอก HomeScreen
-/// ----------------
 class HomeScreen
     extends
         StatefulWidget {
@@ -51,19 +48,17 @@ class _HomeScreenState
     void
   >
   requestPermissions() async {
-    if (await Permission.storage.request().isGranted) {
+    if (await Permission.storage.request().isGranted)
       return;
-    } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(
-        const SnackBar(
-          content: Text(
-            "ต้องการสิทธิ์เข้าถึงไฟล์",
-          ),
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(
+      const SnackBar(
+        content: Text(
+          "ต้องการสิทธิ์เข้าถึงไฟล์",
         ),
-      );
-    }
+      ),
+    );
   }
 
   Future<
@@ -91,21 +86,17 @@ class _HomeScreenState
         String
       >
       allFiles = [];
-
       for (var file in result.files) {
         if (file.path !=
-            null) {
+            null)
           allFiles.add(
             file.path!,
           );
-        }
       }
 
       if (allFiles.isNotEmpty) {
-        // ให้ผู้ใช้ตั้งชื่อ Playlist
         String?
         playlistName = await _askPlaylistName();
-
         if (playlistName !=
                 null &&
             playlistName.trim().isNotEmpty) {
@@ -134,7 +125,6 @@ class _HomeScreenState
     String
     playlistName =
         "";
-
     return showDialog<
       String
     >(
@@ -155,9 +145,7 @@ class _HomeScreenState
                 onChanged:
                     (
                       value,
-                    ) {
-                      playlistName = value;
-                    },
+                    ) => playlistName = value,
               ),
               actions: [
                 TextButton(
@@ -184,6 +172,76 @@ class _HomeScreenState
   }
 
   Future<
+    void
+  >
+  _editPlaylistName(
+    int
+    index,
+  ) async {
+    String
+    newName =
+        seriesList[index].title;
+    final result =
+        await showDialog<
+          String
+        >(
+          context: context,
+          builder:
+              (
+                context,
+              ) {
+                return AlertDialog(
+                  title: const Text(
+                    "แก้ไขชื่อ Playlist",
+                  ),
+                  content: TextField(
+                    autofocus: true,
+                    decoration: const InputDecoration(
+                      hintText: "ชื่อ Playlist",
+                    ),
+                    controller: TextEditingController(
+                      text: seriesList[index].title,
+                    ),
+                    onChanged:
+                        (
+                          value,
+                        ) => newName = value,
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(
+                        context,
+                      ),
+                      child: const Text(
+                        "ยกเลิก",
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () => Navigator.pop(
+                        context,
+                        newName,
+                      ),
+                      child: const Text(
+                        "บันทึก",
+                      ),
+                    ),
+                  ],
+                );
+              },
+        );
+
+    if (result !=
+            null &&
+        result.trim().isNotEmpty) {
+      setState(
+        () {
+          seriesList[index].title = result.trim();
+        },
+      );
+    }
+  }
+
+  Future<
     Widget
   >
   buildThumbnail(
@@ -204,33 +262,22 @@ class _HomeScreenState
         height: 400,
       );
       if (pageImage !=
-          null) {
+          null)
         return Image.memory(
           pageImage.bytes,
           fit: BoxFit.cover,
         );
-      } else {
-        return Container(
-          color: Colors.grey[300],
-          child: const Center(
-            child: Text(
-              "โหลดภาพไม่ได้",
-            ),
-          ),
-        );
-      }
     } else if (path.endsWith(
       '.cbz',
     )) {
       final files = await _extractCbzForThumbnail(
         path,
       );
-      if (files.isNotEmpty) {
+      if (files.isNotEmpty)
         return Image.file(
           files.first,
           fit: BoxFit.cover,
         );
-      }
     }
     return Container(
       color: Colors.grey[300],
@@ -267,11 +314,11 @@ class _HomeScreenState
     final extractDir = Directory(
       '${tempDir.path}/$cbzName-thumb',
     );
-    if (!await extractDir.exists()) {
+    if (!await extractDir
+        .exists())
       await extractDir.create(
         recursive: true,
       );
-    }
 
     List<
       File
@@ -297,7 +344,7 @@ class _HomeScreenState
         imageFiles.add(
           outFile,
         );
-        break; // เอาแค่ไฟล์แรก
+        break;
       }
     }
     return imageFiles;
@@ -320,6 +367,37 @@ class _HomeScreenState
           if (isSelectionMode)
             IconButton(
               icon: const Icon(
+                Icons.edit,
+              ),
+              tooltip: "แก้ชื่อ Playlist",
+              onPressed: () {
+                final selectedIndexes =
+                    <
+                      int
+                    >[];
+                for (
+                  int i = 0;
+                  i <
+                      selectedSeries.length;
+                  i++
+                ) {
+                  if (selectedSeries[i])
+                    selectedIndexes.add(
+                      i,
+                    );
+                }
+                if (selectedIndexes.isNotEmpty) {
+                  for (final index in selectedIndexes) {
+                    _editPlaylistName(
+                      index,
+                    );
+                  }
+                }
+              },
+            ),
+          if (isSelectionMode)
+            IconButton(
+              icon: const Icon(
                 Icons.delete,
               ),
               onPressed: () {
@@ -335,11 +413,10 @@ class _HomeScreenState
                           selectedSeries.length;
                       i++
                     ) {
-                      if (selectedSeries[i]) {
+                      if (selectedSeries[i])
                         toRemove.add(
                           i,
                         );
-                      }
                     }
                     toRemove.sort(
                       (
@@ -540,9 +617,6 @@ class _HomeScreenState
   }
 }
 
-/// ----------------
-/// ชั้นใน SeriesDetailScreen
-/// ----------------
 class SeriesDetailScreen
     extends
         StatefulWidget {
@@ -596,11 +670,11 @@ class _SeriesDetailScreenState
     final extractDir = Directory(
       '${tempDir.path}/$cbzName',
     );
-    if (!await extractDir.exists()) {
+    if (!await extractDir
+        .exists())
       await extractDir.create(
         recursive: true,
       );
-    }
 
     List<
       File
@@ -660,7 +734,6 @@ class _SeriesDetailScreenState
             file.path!,
           );
       }
-
       setState(
         () {
           widget.series.files.addAll(
@@ -692,24 +765,22 @@ class _SeriesDetailScreenState
         height: 160,
       );
       if (pageImage !=
-          null) {
+          null)
         return Image.memory(
           pageImage.bytes,
           fit: BoxFit.cover,
         );
-      }
     } else if (path.endsWith(
       '.cbz',
     )) {
       final files = await extractCbz(
         path,
       );
-      if (files.isNotEmpty) {
+      if (files.isNotEmpty)
         return Image.file(
           files.first,
           fit: BoxFit.cover,
         );
-      }
     }
     return Container(
       color: Colors.grey[300],
@@ -797,7 +868,7 @@ class _SeriesDetailScreenState
                                     _,
                                   ) => PdfViewScreen(
                                     path: path,
-                                    playlist: widget.series.files, // ✅ ส่ง Playlist
+                                    playlist: widget.series.files,
                                   ),
                             ),
                           );
