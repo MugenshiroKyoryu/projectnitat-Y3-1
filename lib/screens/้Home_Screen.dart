@@ -85,7 +85,8 @@ class _HomeScreenState
     );
 
     if (result !=
-        null) {
+            null &&
+        result.files.isNotEmpty) {
       List<
         String
       >
@@ -100,23 +101,86 @@ class _HomeScreenState
         }
       }
 
-      setState(
-        () {
-          if (allFiles.isNotEmpty) {
-            final newTitle = "Playlist ${seriesList.length + 1}";
-            seriesList.add(
-              Series(
-                title: newTitle,
-                files: allFiles,
-              ),
-            );
-            selectedSeries.add(
-              false,
-            );
-          }
-        },
-      );
+      if (allFiles.isNotEmpty) {
+        // ให้ผู้ใช้ตั้งชื่อ Playlist
+        String?
+        playlistName = await _askPlaylistName();
+
+        if (playlistName !=
+                null &&
+            playlistName.trim().isNotEmpty) {
+          setState(
+            () {
+              seriesList.add(
+                Series(
+                  title: playlistName.trim(),
+                  files: allFiles,
+                ),
+              );
+              selectedSeries.add(
+                false,
+              );
+            },
+          );
+        }
+      }
     }
+  }
+
+  Future<
+    String?
+  >
+  _askPlaylistName() async {
+    String
+    playlistName =
+        "";
+
+    return showDialog<
+      String
+    >(
+      context: context,
+      builder:
+          (
+            context,
+          ) {
+            return AlertDialog(
+              title: const Text(
+                "ตั้งชื่อ Playlist",
+              ),
+              content: TextField(
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: "ชื่อ Playlist",
+                ),
+                onChanged:
+                    (
+                      value,
+                    ) {
+                      playlistName = value;
+                    },
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(
+                    context,
+                  ),
+                  child: const Text(
+                    "ยกเลิก",
+                  ),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(
+                    context,
+                    playlistName,
+                  ),
+                  child: const Text(
+                    "ตกลง",
+                  ),
+                ),
+              ],
+            );
+          },
+    );
   }
 
   Future<
