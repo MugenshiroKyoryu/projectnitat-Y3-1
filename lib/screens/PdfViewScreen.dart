@@ -337,7 +337,7 @@ class _PdfViewScreenState
                       icon: const Icon(
                         Icons.more_vert,
                       ),
-                      tooltip: 'เลือกโหมดการอ่าน',
+                      tooltip: 'mode',
                       onSelected:
                           (
                             mode,
@@ -355,20 +355,50 @@ class _PdfViewScreenState
                           ) => [
                             const PopupMenuItem(
                               value: ReadingMode.vertical,
-                              child: Text(
-                                "โหมดสไลด์ลง (ค่าเริ่มต้น)",
-                              ),
-                            ),
-                            const PopupMenuItem(
-                              value: ReadingMode.leftToRight,
-                              child: Text(
-                                "โหมดสไลด์ ซ้าย → ขวา",
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.swap_vert,
+                                  ), // เลือกไอคอนที่ต้องการ
+                                  SizedBox(
+                                    width: 8,
+                                  ), // เว้นช่องว่างระหว่างไอคอนกับข้อความ
+                                  Text(
+                                    "โหมดสไลด์ลง (ค่าเริ่มต้น)",
+                                  ),
+                                ],
                               ),
                             ),
                             const PopupMenuItem(
                               value: ReadingMode.rightToLeft,
-                              child: Text(
-                                "โหมดสไลด์ ขวา → ซ้าย",
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.keyboard_arrow_left,
+                                  ), // เลือกไอคอนที่ต้องการ
+                                  SizedBox(
+                                    width: 8,
+                                  ), // เว้นช่องว่างระหว่างไอคอนกับข้อความ
+                                  Text(
+                                    "โหมดสไลด์ ขวา → ซ้าย",
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const PopupMenuItem(
+                              value: ReadingMode.leftToRight,
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.keyboard_arrow_right,
+                                  ), // เลือกไอคอนที่ต้องการ
+                                  SizedBox(
+                                    width: 8,
+                                  ), // เว้นช่องว่างระหว่างไอคอนกับข้อความ
+                                  Text(
+                                    "โหมดสไลด์ ซ้าย → ขวา",
+                                  ),
+                                ],
                               ),
                             ),
                           ],
