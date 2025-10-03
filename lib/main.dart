@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:workshopfinal/screens/้Home_Screen.dart';
-import 'package:workshopfinal/screens/reader_screen.dart';
-import 'package:workshopfinal/screens/import_screen.dart';
 
 void
 main() {
@@ -34,16 +32,6 @@ class MyApp
       home: HomeScreen(),
 
       //Map ของเส้นทาง (route) ที่ Flutter ใช้เวลาเปลี่ยนหน้า
-      routes: {
-        '/reader':
-            (
-              _,
-            ) => ReaderScreen(),
-        '/import':
-            (
-              _,
-            ) => ImportScreen(),
-      },
     );
   }
 }

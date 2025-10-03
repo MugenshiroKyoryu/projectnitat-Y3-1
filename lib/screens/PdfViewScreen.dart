@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:pdfx/pdfx.dart';
 
+enum ReadingMode {
+  vertical, // ค่าเริ่มต้น สไลด์ลง
+  leftToRight, // ซ้าย → ขวา
+  rightToLeft, // ขวา → ซ้าย
+}
+
 class PdfViewScreen
     extends
         StatefulWidget {
@@ -30,8 +36,11 @@ class _PdfViewScreenState
         State<
           PdfViewScreen
         > {
-  late PdfControllerPinch
-  _pdfController;
+  PdfControllerPinch?
+  _pdfControllerPinch;
+  PdfController?
+  _pdfControllerNormal;
+
   int
       // ignore: unused_field
       _pagesCount =
@@ -44,16 +53,30 @@ class _PdfViewScreenState
   _isUiVisible =
       true;
 
+  ReadingMode
+  _readingMode =
+      ReadingMode.vertical;
+
   @override
   void
   initState() {
     super.initState();
-    _pdfController = PdfControllerPinch(
+    _initControllers();
+    _loadPdfInfo();
+  }
+
+  void
+  _initControllers() {
+    _pdfControllerPinch = PdfControllerPinch(
       document: PdfDocument.openFile(
         widget.path,
       ),
     );
-    _loadPdfInfo();
+    _pdfControllerNormal = PdfController(
+      document: PdfDocument.openFile(
+        widget.path,
+      ),
+    );
   }
 
   void
@@ -69,7 +92,8 @@ class _PdfViewScreenState
   @override
   void
   dispose() {
-    _pdfController.dispose();
+    _pdfControllerPinch?.dispose();
+    _pdfControllerNormal?.dispose();
     super.dispose();
   }
 
@@ -225,6 +249,50 @@ class _PdfViewScreenState
     );
   }
 
+  Widget
+  _buildPdfView() {
+    if (_readingMode ==
+        ReadingMode.vertical) {
+      return PdfViewPinch(
+        key: const ValueKey(
+          "pinchMode",
+        ),
+        controller: _pdfControllerPinch!,
+        onPageChanged:
+            (
+              page,
+            ) {
+              setState(
+                () {
+                  _currentPage = page;
+                },
+              );
+            },
+      );
+    } else {
+      return PdfView(
+        key: ValueKey(
+          _readingMode,
+        ), // เปลี่ยน key ทุกครั้งเพื่อสร้างใหม่
+        controller: _pdfControllerNormal!,
+        scrollDirection: Axis.horizontal,
+        reverse:
+            _readingMode ==
+            ReadingMode.rightToLeft,
+        onPageChanged:
+            (
+              page,
+            ) {
+              setState(
+                () {
+                  _currentPage = page;
+                },
+              );
+            },
+      );
+    }
+  }
+
   @override
   Widget
   build(
@@ -248,25 +316,71 @@ class _PdfViewScreenState
       child: Scaffold(
         appBar: _isUiVisible
             ? AppBar(
-                title: Text(
-                  fileName,
+                centerTitle: false,
+                titleSpacing: 12,
+                title: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: Text(
+                        fileName,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(
+                      width: 8,
+                    ),
+                    PopupMenuButton<
+                      ReadingMode
+                    >(
+                      padding: EdgeInsets.zero,
+                      icon: const Icon(
+                        Icons.more_vert,
+                      ),
+                      tooltip: 'เลือกโหมดการอ่าน',
+                      onSelected:
+                          (
+                            mode,
+                          ) {
+                            setState(
+                              () {
+                                _readingMode = mode;
+                                _initControllers(); // สร้าง controller ใหม่ทุกครั้งที่เปลี่ยนโหมด
+                              },
+                            );
+                          },
+                      itemBuilder:
+                          (
+                            context,
+                          ) => [
+                            const PopupMenuItem(
+                              value: ReadingMode.vertical,
+                              child: Text(
+                                "โหมดสไลด์ลง (ค่าเริ่มต้น)",
+                              ),
+                            ),
+                            const PopupMenuItem(
+                              value: ReadingMode.leftToRight,
+                              child: Text(
+                                "โหมดสไลด์ ซ้าย → ขวา",
+                              ),
+                            ),
+                            const PopupMenuItem(
+                              value: ReadingMode.rightToLeft,
+                              child: Text(
+                                "โหมดสไลด์ ขวา → ซ้าย",
+                              ),
+                            ),
+                          ],
+                    ),
+                  ],
                 ),
               )
             : null,
         body: Stack(
           children: [
-            PdfViewPinch(
-              controller: _pdfController,
-              onPageChanged:
-                  (
-                    page,
-                  ) {
-                    setState(
-                      () {
-                        _currentPage = page;
-                      },
-                    );
-                  },
+            Positioned.fill(
+              child: _buildPdfView(),
             ),
             if (_isUiVisible)
               Positioned(
