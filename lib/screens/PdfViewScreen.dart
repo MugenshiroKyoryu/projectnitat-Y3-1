@@ -336,8 +336,20 @@ class _PdfViewScreenState
                       padding: EdgeInsets.zero,
                       icon: const Icon(
                         Icons.more_vert,
+                        color: Color.fromARGB(
+                          255,
+                          0,
+                          0,
+                          0,
+                        ),
                       ),
-                      tooltip: 'mode',
+                      tooltip: 'เปลี่ยนโหมดการอ่าน',
+                      color: Colors.grey[900], // สีพื้นหลังของเมนู
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          12,
+                        ),
+                      ),
                       onSelected:
                           (
                             mode,
@@ -345,7 +357,7 @@ class _PdfViewScreenState
                             setState(
                               () {
                                 _readingMode = mode;
-                                _initControllers(); // สร้าง controller ใหม่ทุกครั้งที่เปลี่ยนโหมด
+                                _initControllers();
                               },
                             );
                           },
@@ -353,50 +365,107 @@ class _PdfViewScreenState
                           (
                             context,
                           ) => [
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: ReadingMode.vertical,
                               child: Row(
                                 children: [
                                   Icon(
                                     Icons.swap_vert,
-                                  ), // เลือกไอคอนที่ต้องการ
-                                  SizedBox(
-                                    width: 8,
-                                  ), // เว้นช่องว่างระหว่างไอคอนกับข้อความ
-                                  Text(
-                                    "โหมดสไลด์ลง (ค่าเริ่มต้น)",
+                                    color:
+                                        _readingMode ==
+                                            ReadingMode.vertical
+                                        ? Colors.orange
+                                        : Colors.white70,
+                                  ),
+                                  const SizedBox(
+                                    width: 10,
+                                  ),
+                                  Expanded(
+                                    child: Text(
+                                      "โหมดสไลด์ลง (ค่าเริ่มต้น)",
+                                      style: TextStyle(
+                                        color:
+                                            _readingMode ==
+                                                ReadingMode.vertical
+                                            ? Colors.orange
+                                            : Colors.white,
+                                        fontWeight:
+                                            _readingMode ==
+                                                ReadingMode.vertical
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: ReadingMode.rightToLeft,
                               child: Row(
                                 children: [
                                   Icon(
                                     Icons.keyboard_arrow_left,
-                                  ), // เลือกไอคอนที่ต้องการ
-                                  SizedBox(
-                                    width: 8,
-                                  ), // เว้นช่องว่างระหว่างไอคอนกับข้อความ
-                                  Text(
-                                    "โหมดสไลด์ ขวา → ซ้าย",
+                                    color:
+                                        _readingMode ==
+                                            ReadingMode.rightToLeft
+                                        ? Colors.orange
+                                        : Colors.white70,
+                                  ),
+                                  const SizedBox(
+                                    width: 10,
+                                  ),
+                                  Expanded(
+                                    child: Text(
+                                      "โหมดสไลด์ ขวา → ซ้าย",
+                                      style: TextStyle(
+                                        color:
+                                            _readingMode ==
+                                                ReadingMode.rightToLeft
+                                            ? Colors.orange
+                                            : Colors.white,
+                                        fontWeight:
+                                            _readingMode ==
+                                                ReadingMode.rightToLeft
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
                             ),
-                            const PopupMenuItem(
+                            PopupMenuItem(
                               value: ReadingMode.leftToRight,
                               child: Row(
                                 children: [
                                   Icon(
                                     Icons.keyboard_arrow_right,
-                                  ), // เลือกไอคอนที่ต้องการ
-                                  SizedBox(
-                                    width: 8,
-                                  ), // เว้นช่องว่างระหว่างไอคอนกับข้อความ
-                                  Text(
-                                    "โหมดสไลด์ ซ้าย → ขวา",
+                                    color:
+                                        _readingMode ==
+                                            ReadingMode.leftToRight
+                                        ? Colors.orange
+                                        : Colors.white70,
+                                  ),
+                                  const SizedBox(
+                                    width: 10,
+                                  ),
+                                  Expanded(
+                                    child: Text(
+                                      "โหมดสไลด์ ซ้าย → ขวา",
+                                      style: TextStyle(
+                                        color:
+                                            _readingMode ==
+                                                ReadingMode.leftToRight
+                                            ? Colors.orange
+                                            : Colors.white,
+                                        fontWeight:
+                                            _readingMode ==
+                                                ReadingMode.leftToRight
+                                            ? FontWeight.bold
+                                            : FontWeight.normal,
+                                      ),
+                                    ),
                                   ),
                                 ],
                               ),
