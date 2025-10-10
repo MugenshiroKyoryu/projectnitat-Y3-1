@@ -44,6 +44,20 @@ class _HomeScreenState
   isSelectionMode =
       false;
 
+  // 🎨 สีหลักของธีมเข้ม
+  final Color
+  _bgColor = const Color(
+    0xFF1A1A1A,
+  );
+  final Color
+  _cardColor = const Color(
+    0xFF2C2C2C,
+  );
+  final Color
+  _accentColor = const Color(
+    0xFFFFA726,
+  );
+
   Future<
     void
   >
@@ -66,7 +80,6 @@ class _HomeScreenState
   >
   pickFiles() async {
     await requestPermissions();
-
     FilePickerResult?
     result = await FilePicker.platform.pickFiles(
       allowMultiple: true,
@@ -134,13 +147,35 @@ class _HomeScreenState
             context,
           ) {
             return AlertDialog(
+              backgroundColor: _cardColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(
+                  12,
+                ),
+              ),
               title: const Text(
                 "ตั้งชื่อ Playlist",
+                style: TextStyle(
+                  color: Colors.white,
+                ),
               ),
               content: TextField(
+                style: const TextStyle(
+                  color: Colors.white,
+                ),
                 autofocus: true,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: "ชื่อ Playlist",
+                  hintStyle: TextStyle(
+                    color: Colors.grey[400],
+                  ),
+                  filled: true,
+                  fillColor: Colors.black26,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(
+                      10,
+                    ),
+                  ),
                 ),
                 onChanged:
                     (
@@ -152,17 +187,31 @@ class _HomeScreenState
                   onPressed: () => Navigator.pop(
                     context,
                   ),
-                  child: const Text(
+                  child: Text(
                     "ยกเลิก",
+                    style: TextStyle(
+                      color: Colors.grey[400],
+                    ),
                   ),
                 ),
                 ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: _accentColor,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        10,
+                      ),
+                    ),
+                  ),
                   onPressed: () => Navigator.pop(
                     context,
                     playlistName,
                   ),
                   child: const Text(
                     "ตกลง",
+                    style: TextStyle(
+                      color: Colors.black,
+                    ),
                   ),
                 ),
               ],
@@ -191,13 +240,35 @@ class _HomeScreenState
                 context,
               ) {
                 return AlertDialog(
+                  backgroundColor: _cardColor,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(
+                      12,
+                    ),
+                  ),
                   title: const Text(
                     "แก้ไขชื่อ Playlist",
+                    style: TextStyle(
+                      color: Colors.white,
+                    ),
                   ),
                   content: TextField(
                     autofocus: true,
-                    decoration: const InputDecoration(
+                    style: const TextStyle(
+                      color: Colors.white,
+                    ),
+                    decoration: InputDecoration(
                       hintText: "ชื่อ Playlist",
+                      hintStyle: TextStyle(
+                        color: Colors.grey,
+                      ),
+                      filled: true,
+                      fillColor: Colors.black26,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(
+                          10,
+                        ),
+                      ),
                     ),
                     controller: TextEditingController(
                       text: seriesList[index].title,
@@ -212,17 +283,31 @@ class _HomeScreenState
                       onPressed: () => Navigator.pop(
                         context,
                       ),
-                      child: const Text(
+                      child: Text(
                         "ยกเลิก",
+                        style: TextStyle(
+                          color: Colors.grey[400],
+                        ),
                       ),
                     ),
                     ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _accentColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(
+                            10,
+                          ),
+                        ),
+                      ),
                       onPressed: () => Navigator.pop(
                         context,
                         newName,
                       ),
                       child: const Text(
                         "บันทึก",
+                        style: TextStyle(
+                          color: Colors.black,
+                        ),
                       ),
                     ),
                   ],
@@ -263,9 +348,14 @@ class _HomeScreenState
       );
       if (pageImage !=
           null)
-        return Image.memory(
-          pageImage.bytes,
-          fit: BoxFit.cover,
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(
+            10,
+          ),
+          child: Image.memory(
+            pageImage.bytes,
+            fit: BoxFit.cover,
+          ),
         );
     } else if (path.endsWith(
       '.cbz',
@@ -274,13 +364,23 @@ class _HomeScreenState
         path,
       );
       if (files.isNotEmpty)
-        return Image.file(
-          files.first,
-          fit: BoxFit.cover,
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(
+            10,
+          ),
+          child: Image.file(
+            files.first,
+            fit: BoxFit.cover,
+          ),
         );
     }
     return Container(
-      color: Colors.grey[300],
+      decoration: BoxDecoration(
+        color: Colors.grey[800],
+        borderRadius: BorderRadius.circular(
+          10,
+        ),
+      ),
     );
   }
 
@@ -301,7 +401,6 @@ class _HomeScreenState
     );
     final tempDir =
         await getTemporaryDirectory();
-
     final cbzName = cbzPath
         .split(
           '/',
@@ -357,11 +456,17 @@ class _HomeScreenState
     context,
   ) {
     return Scaffold(
+      backgroundColor: _bgColor,
       appBar: AppBar(
+        backgroundColor: Colors.grey[900],
         title: Text(
           isSelectionMode
               ? "${selectedSeries.where((e) => e).length} Selected"
               : "ชั้นหนังสือ",
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         actions: [
           if (isSelectionMode)
@@ -369,7 +474,7 @@ class _HomeScreenState
               icon: const Icon(
                 Icons.edit,
               ),
-              tooltip: "แก้ชื่อ Playlist",
+              color: _accentColor,
               onPressed: () {
                 final selectedIndexes =
                     <
@@ -400,6 +505,7 @@ class _HomeScreenState
               icon: const Icon(
                 Icons.delete,
               ),
+              color: Colors.redAccent,
               onPressed: () {
                 setState(
                   () {
@@ -444,6 +550,7 @@ class _HomeScreenState
               icon: const Icon(
                 Icons.close,
               ),
+              color: Colors.white70,
               onPressed: () {
                 setState(
                   () {
@@ -462,6 +569,10 @@ class _HomeScreenState
           ? const Center(
               child: Text(
                 "กด + เพื่อเพิ่มไฟล์",
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 18,
+                ),
               ),
             )
           : GridView.builder(
@@ -516,70 +627,110 @@ class _HomeScreenState
                           );
                         }
                       },
-                      child: Stack(
-                        children: [
-                          Column(
-                            children: [
-                              Expanded(
-                                child:
-                                    FutureBuilder<
-                                      Widget
-                                    >(
-                                      future: buildThumbnail(
-                                        series.files.first,
-                                      ),
-                                      builder:
-                                          (
-                                            context,
-                                            snapshot,
-                                          ) {
-                                            if (snapshot.hasData) return snapshot.data!;
-                                            return Container(
-                                              color: Colors.grey[300],
-                                              child: const Center(
-                                                child: CircularProgressIndicator(),
-                                              ),
-                                            );
-                                          },
-                                    ),
-                              ),
-                              const SizedBox(
-                                height: 5,
-                              ),
-                              Text(
-                                series.title,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
+                      child: AnimatedContainer(
+                        duration: const Duration(
+                          milliseconds: 200,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _cardColor,
+                          borderRadius: BorderRadius.circular(
+                            12,
                           ),
-                          if (isSelectionMode)
-                            Positioned(
-                              top: 4,
-                              right: 4,
-                              child: Checkbox(
-                                value: isSelected,
-                                onChanged:
-                                    (
-                                      value,
-                                    ) {
-                                      setState(
-                                        () {
-                                          selectedSeries[index] = value!;
-                                        },
-                                      );
-                                    },
+                          boxShadow: [
+                            BoxShadow(
+                              color: isSelected
+                                  ? _accentColor.withOpacity(
+                                      0.5,
+                                    )
+                                  : Colors.black54,
+                              blurRadius: isSelected
+                                  ? 12
+                                  : 6,
+                              offset: const Offset(
+                                0,
+                                4,
                               ),
                             ),
-                        ],
+                          ],
+                        ),
+                        child: Stack(
+                          children: [
+                            Column(
+                              children: [
+                                Expanded(
+                                  child:
+                                      FutureBuilder<
+                                        Widget
+                                      >(
+                                        future: buildThumbnail(
+                                          series.files.first,
+                                        ),
+                                        builder:
+                                            (
+                                              context,
+                                              snapshot,
+                                            ) {
+                                              if (snapshot.hasData) return snapshot.data!;
+                                              return Container(
+                                                decoration: BoxDecoration(
+                                                  color: Colors.grey[800],
+                                                  borderRadius: BorderRadius.circular(
+                                                    10,
+                                                  ),
+                                                ),
+                                                child: const Center(
+                                                  child: CircularProgressIndicator(
+                                                    color: Colors.orangeAccent,
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                      ),
+                                ),
+                                const SizedBox(
+                                  height: 5,
+                                ),
+                                Text(
+                                  series.title,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    color: Colors.white70,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (isSelectionMode)
+                              Positioned(
+                                top: 4,
+                                right: 4,
+                                child: Checkbox(
+                                  value: isSelected,
+                                  activeColor: _accentColor,
+                                  onChanged:
+                                      (
+                                        value,
+                                      ) {
+                                        setState(
+                                          () {
+                                            selectedSeries[index] = value!;
+                                          },
+                                        );
+                                      },
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
                     );
                   },
             ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: _accentColor,
         onPressed: () {
           showModalBottomSheet(
+            backgroundColor: _cardColor,
             context: context,
             builder:
                 (
@@ -589,11 +740,15 @@ class _HomeScreenState
                     child: Wrap(
                       children: [
                         ListTile(
-                          leading: const Icon(
+                          leading: Icon(
                             Icons.insert_drive_file,
+                            color: _accentColor,
                           ),
                           title: const Text(
                             "เพิ่มไฟล์",
+                            style: TextStyle(
+                              color: Colors.white,
+                            ),
                           ),
                           onTap: () {
                             Navigator.pop(
@@ -611,6 +766,7 @@ class _HomeScreenState
         child: const Icon(
           Icons.add,
           size: 30,
+          color: Colors.black,
         ),
       ),
     );
@@ -766,9 +922,14 @@ class _SeriesDetailScreenState
       );
       if (pageImage !=
           null)
-        return Image.memory(
-          pageImage.bytes,
-          fit: BoxFit.cover,
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(
+            8,
+          ),
+          child: Image.memory(
+            pageImage.bytes,
+            fit: BoxFit.cover,
+          ),
         );
     } else if (path.endsWith(
       '.cbz',
@@ -777,13 +938,23 @@ class _SeriesDetailScreenState
         path,
       );
       if (files.isNotEmpty)
-        return Image.file(
-          files.first,
-          fit: BoxFit.cover,
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(
+            8,
+          ),
+          child: Image.file(
+            files.first,
+            fit: BoxFit.cover,
+          ),
         );
     }
     return Container(
-      color: Colors.grey[300],
+      decoration: BoxDecoration(
+        color: Colors.grey[800],
+        borderRadius: BorderRadius.circular(
+          8,
+        ),
+      ),
     );
   }
 
@@ -793,16 +964,37 @@ class _SeriesDetailScreenState
     BuildContext
     context,
   ) {
+    final Color
+    _accentColor = const Color(
+      0xFFFFA726,
+    );
+    final Color
+    _bgColor = const Color(
+      0xFF1A1A1A,
+    );
+
     return Scaffold(
+      backgroundColor: _bgColor,
       appBar: AppBar(
+        backgroundColor: Colors.grey[900],
+        iconTheme: const IconThemeData(
+          color: Colors.orange, // 🎨 สีปุ่มย้อนกลับ
+        ),
         title: Text(
           widget.series.title,
+          style: const TextStyle(
+            color: Colors.white,
+          ),
         ),
       ),
+
       body: widget.series.files.isEmpty
           ? const Center(
               child: Text(
                 "ไม่มีไฟล์ในซีรีส์นี้",
+                style: TextStyle(
+                  color: Colors.grey,
+                ),
               ),
             )
           : ListView.builder(
@@ -818,89 +1010,109 @@ class _SeriesDetailScreenState
                           '/',
                         )
                         .last;
-                    return ListTile(
-                      leading:
-                          FutureBuilder<
-                            Widget
-                          >(
-                            future: buildThumbnail(
-                              path,
-                            ),
-                            builder:
-                                (
-                                  context,
-                                  snapshot,
-                                ) {
-                                  if (snapshot.hasData) return snapshot.data!;
-                                  return const SizedBox(
-                                    width: 50,
-                                    child: CircularProgressIndicator(),
-                                  );
-                                },
-                          ),
-                      title: Text(
-                        fileName,
+                    return Card(
+                      color: const Color(
+                        0xFF2C2C2C,
                       ),
-                      trailing: IconButton(
-                        icon: const Icon(
-                          Icons.delete,
-                          color: Colors.red,
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 5,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(
+                          12,
                         ),
-                        onPressed: () {
-                          setState(
-                            () {
-                              widget.series.files.removeAt(
-                                index,
-                              );
-                            },
-                          );
+                      ),
+                      child: ListTile(
+                        leading:
+                            FutureBuilder<
+                              Widget
+                            >(
+                              future: buildThumbnail(
+                                path,
+                              ),
+                              builder:
+                                  (
+                                    context,
+                                    snapshot,
+                                  ) {
+                                    if (snapshot.hasData) return snapshot.data!;
+                                    return const SizedBox(
+                                      width: 50,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.orangeAccent,
+                                      ),
+                                    );
+                                  },
+                            ),
+                        title: Text(
+                          fileName,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                          ),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(
+                            Icons.delete,
+                            color: Colors.redAccent,
+                          ),
+                          onPressed: () {
+                            setState(
+                              () {
+                                widget.series.files.removeAt(
+                                  index,
+                                );
+                              },
+                            );
+                          },
+                        ),
+                        onTap: () async {
+                          if (path.endsWith(
+                            '.pdf',
+                          )) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (
+                                      _,
+                                    ) => PdfViewScreen(
+                                      path: path,
+                                      playlist: widget.series.files,
+                                    ),
+                              ),
+                            );
+                          } else if (path.endsWith(
+                            '.cbz',
+                          )) {
+                            final images = await extractCbz(
+                              path,
+                            );
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (
+                                      _,
+                                    ) => CbzViewScreen(
+                                      series: widget.series,
+                                      currentIndex: index,
+                                      images: images,
+                                    ),
+                              ),
+                            );
+                          }
                         },
                       ),
-                      onTap: () async {
-                        if (path.endsWith(
-                          '.pdf',
-                        )) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (
-                                    _,
-                                  ) => PdfViewScreen(
-                                    path: path,
-                                    playlist: widget.series.files,
-                                  ),
-                            ),
-                          );
-                        } else if (path.endsWith(
-                          '.cbz',
-                        )) {
-                          final images = await extractCbz(
-                            path,
-                          );
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (
-                                    _,
-                                  ) => CbzViewScreen(
-                                    series: widget.series,
-                                    currentIndex: index,
-                                    images: images,
-                                  ),
-                            ),
-                          );
-                        }
-                      },
                     );
                   },
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: addFilesToPlaylist,
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: _accentColor,
         child: const Icon(
           Icons.add,
+          color: Colors.black,
         ),
       ),
     );
