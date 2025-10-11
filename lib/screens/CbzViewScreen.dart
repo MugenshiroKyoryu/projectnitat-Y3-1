@@ -4,6 +4,12 @@ import 'package:path_provider/path_provider.dart';
 import 'package:archive/archive_io.dart';
 import 'package:workshopfinal/models/data.dart';
 
+enum ReadingMode {
+  vertical, // ค่าเริ่มต้น สไลด์ลง
+  leftToRight, // ซ้าย → ขวา
+  rightToLeft, // ขวา → ซ้าย
+}
+
 class CbzViewScreen
     extends
         StatefulWidget {
@@ -42,10 +48,19 @@ class _CbzViewScreenState
     File
   >
   currentImages;
-
   bool
   _isUiVisible =
-      true; // ✅ ใช้ควบคุมการซ่อน/แสดง UI
+      true;
+  ReadingMode
+  _readingMode =
+      ReadingMode.vertical;
+
+  Key
+  _viewKey =
+      UniqueKey();
+  final PageController
+  _pageController =
+      PageController();
 
   @override
   void
@@ -55,6 +70,13 @@ class _CbzViewScreenState
         widget.currentIndex;
     currentImages =
         widget.images;
+  }
+
+  @override
+  void
+  dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   Future<
@@ -142,6 +164,7 @@ class _CbzViewScreenState
           () {
             currentIndex++;
             currentImages = nextImages;
+            _viewKey = UniqueKey();
           },
         );
       }
@@ -177,6 +200,7 @@ class _CbzViewScreenState
           () {
             currentIndex--;
             currentImages = prevImages;
+            _viewKey = UniqueKey();
           },
         );
       }
@@ -197,7 +221,9 @@ class _CbzViewScreenState
   showChaptersMenu() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.grey[900],
+      backgroundColor: const Color(
+        0xFF1E1E1E,
+      ),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(
@@ -216,8 +242,8 @@ class _CbzViewScreenState
                   (
                     context,
                     index,
-                  ) => Divider(
-                    color: Colors.grey[700],
+                  ) => const Divider(
+                    color: Colors.grey,
                     height: 1,
                   ),
               itemBuilder:
@@ -263,6 +289,7 @@ class _CbzViewScreenState
                             () {
                               currentIndex = index;
                               currentImages = images;
+                              _viewKey = UniqueKey();
                             },
                           );
                         }
@@ -272,6 +299,46 @@ class _CbzViewScreenState
             );
           },
     );
+  }
+
+  Widget
+  imageView() {
+    switch (_readingMode) {
+      case ReadingMode.vertical:
+        return Container(
+          color: Colors.black, // ✅ ใช้ Container แทน backgroundColor
+          child: ListView.builder(
+            key: _viewKey,
+            itemCount: currentImages.length,
+            itemBuilder:
+                (
+                  context,
+                  index,
+                ) => Image.file(
+                  currentImages[index],
+                ),
+          ),
+        );
+
+      case ReadingMode.leftToRight:
+      case ReadingMode.rightToLeft:
+        return PageView.builder(
+          key: _viewKey,
+          controller: _pageController,
+          scrollDirection: Axis.horizontal,
+          reverse:
+              _readingMode ==
+              ReadingMode.rightToLeft,
+          itemCount: currentImages.length,
+          itemBuilder:
+              (
+                context,
+                index,
+              ) => Image.file(
+                currentImages[index],
+              ),
+        );
+    }
   }
 
   @override
@@ -290,35 +357,110 @@ class _CbzViewScreenState
       onTap: () {
         setState(
           () {
-            _isUiVisible = !_isUiVisible; // ✅ แตะเพื่อซ่อน/โชว์ UI
+            _isUiVisible = !_isUiVisible;
           },
         );
       },
       child: Scaffold(
+        backgroundColor: Colors.black,
         appBar: _isUiVisible
             ? AppBar(
+                backgroundColor: const Color(
+                  0xFF1E1E1E,
+                ),
                 title: Text(
                   fileName,
                 ),
+                titleTextStyle: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                ),
+                iconTheme: const IconThemeData(
+                  color: Colors.orange, // 🎨 สีปุ่มย้อนกลับ
+                ),
+                actions: [
+                  PopupMenuButton<
+                    ReadingMode
+                  >(
+                    padding: EdgeInsets.zero,
+                    icon: const Icon(
+                      Icons.more_vert,
+                      color: Colors.white,
+                    ),
+                    tooltip: 'เปลี่ยนโหมดการอ่าน',
+                    color: const Color(
+                      0xFF1E1E1E,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(
+                        12,
+                      ),
+                    ),
+                    onSelected:
+                        (
+                          mode,
+                        ) {
+                          setState(
+                            () {
+                              _readingMode = mode;
+                              _viewKey = UniqueKey();
+                            },
+                          );
+                          Future.delayed(
+                            const Duration(
+                              milliseconds: 100,
+                            ),
+                            () {
+                              if (_readingMode !=
+                                  ReadingMode.vertical) {
+                                _pageController.jumpToPage(
+                                  0,
+                                );
+                              }
+                            },
+                          );
+                        },
+                    itemBuilder:
+                        (
+                          context,
+                        ) => [
+                          PopupMenuItem(
+                            value: ReadingMode.vertical,
+                            child: _buildMenuItem(
+                              Icons.swap_vert,
+                              "โหมดสไลด์ลง (ค่าเริ่มต้น)",
+                              _readingMode ==
+                                  ReadingMode.vertical,
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: ReadingMode.rightToLeft,
+                            child: _buildMenuItem(
+                              Icons.keyboard_arrow_left,
+                              "โหมดสไลด์ ขวา → ซ้าย",
+                              _readingMode ==
+                                  ReadingMode.rightToLeft,
+                            ),
+                          ),
+                          PopupMenuItem(
+                            value: ReadingMode.leftToRight,
+                            child: _buildMenuItem(
+                              Icons.keyboard_arrow_right,
+                              "โหมดสไลด์ ซ้าย → ขวา",
+                              _readingMode ==
+                                  ReadingMode.leftToRight,
+                            ),
+                          ),
+                        ],
+                  ),
+                ],
               )
-            : null, // ✅ ซ่อน AppBar เมื่อ _isUiVisible = false
+            : null,
         body: Stack(
           children: [
-            // เนื้อหาหลัก (รูปการ์ตูน)
-            ListView.builder(
-              itemCount: currentImages.length,
-              itemBuilder:
-                  (
-                    context,
-                    index,
-                  ) {
-                    return Image.file(
-                      currentImages[index],
-                    );
-                  },
+            Positioned.fill(
+              child: imageView(),
             ),
-
-            // ✅ ปุ่ม 3 ปุ่มซ้ายล่าง (ตำแหน่งเดิม)
             if (_isUiVisible)
               Positioned(
                 left: 20,
@@ -340,7 +482,9 @@ class _CbzViewScreenState
                         ),
                       ),
                       Container(
-                        color: Colors.grey[850],
+                        color: const Color(
+                          0xFF1E1E1E,
+                        ),
                         child: IconButton(
                           icon: const Icon(
                             Icons.arrow_back,
@@ -350,7 +494,9 @@ class _CbzViewScreenState
                         ),
                       ),
                       Container(
-                        color: Colors.grey[850],
+                        color: const Color(
+                          0xFF1E1E1E,
+                        ),
                         child: IconButton(
                           icon: const Icon(
                             Icons.arrow_forward,
@@ -366,6 +512,43 @@ class _CbzViewScreenState
           ],
         ),
       ),
+    );
+  }
+
+  Widget
+  _buildMenuItem(
+    IconData
+    icon,
+    String
+    text,
+    bool
+    active,
+  ) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          color: active
+              ? Colors.orange
+              : Colors.white70,
+        ),
+        const SizedBox(
+          width: 10,
+        ),
+        Expanded(
+          child: Text(
+            text,
+            style: TextStyle(
+              color: active
+                  ? Colors.orange
+                  : Colors.white,
+              fontWeight: active
+                  ? FontWeight.bold
+                  : FontWeight.normal,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

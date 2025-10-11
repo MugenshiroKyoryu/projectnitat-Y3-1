@@ -52,7 +52,6 @@ class _PdfViewScreenState
   bool
   _isUiVisible =
       true;
-
   ReadingMode
   _readingMode =
       ReadingMode.vertical;
@@ -273,7 +272,7 @@ class _PdfViewScreenState
       return PdfView(
         key: ValueKey(
           _readingMode,
-        ), // เปลี่ยน key ทุกครั้งเพื่อสร้างใหม่
+        ),
         controller: _pdfControllerNormal!,
         scrollDirection: Axis.horizontal,
         reverse:
@@ -317,6 +316,10 @@ class _PdfViewScreenState
         appBar: _isUiVisible
             ? AppBar(
                 centerTitle: false,
+                iconTheme: const IconThemeData(
+                  color: Colors.orange, // 🎨 สีปุ่มย้อนกลับ
+                ),
+                backgroundColor: Colors.grey[900], // ✅ ธีมมืด
                 titleSpacing: 12,
                 title: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -325,6 +328,9 @@ class _PdfViewScreenState
                       child: Text(
                         fileName,
                         overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                     const SizedBox(
@@ -336,15 +342,10 @@ class _PdfViewScreenState
                       padding: EdgeInsets.zero,
                       icon: const Icon(
                         Icons.more_vert,
-                        color: Color.fromARGB(
-                          255,
-                          0,
-                          0,
-                          0,
-                        ),
+                        color: Colors.white, // ✅ ไอคอนสีขาว
                       ),
                       tooltip: 'เปลี่ยนโหมดการอ่าน',
-                      color: Colors.grey[900], // สีพื้นหลังของเมนู
+                      color: Colors.grey[850], // ✅ พื้นหลังเมนูเข้ม
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(
                           12,
