@@ -362,7 +362,9 @@ class _CbzViewScreenState
         );
       },
       child: Scaffold(
-        backgroundColor: Colors.black,
+        backgroundColor: const Color(
+          0xFFF4EDF5,
+        ),
         appBar: _isUiVisible
             ? AppBar(
                 backgroundColor: const Color(
