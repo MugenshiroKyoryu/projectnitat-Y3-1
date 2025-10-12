@@ -1,26 +1,28 @@
-import 'dart:io';
-import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:archive/archive_io.dart';
-import 'package:workshopfinal/models/data.dart';
+import 'dart:io'; // ใช้จัดการไฟล์ เช่น อ่านไฟล์, สร้างไฟล์
+import 'package:flutter/material.dart'; // ใช้สร้าง UI ของ Flutter
+import 'package:path_provider/path_provider.dart'; // ใช้หาพาธของโฟลเดอร์เครื่อง เช่น temp
+import 'package:archive/archive_io.dart'; // ใช้แตกไฟล์ .cbz (zip)
+import 'package:workshopfinal/models/data.dart'; // ใช้เรียกข้อมูลโมเดล Series ของเรา
 
+// กำหนด enum สำหรับโหมดการอ่าน
 enum ReadingMode {
   vertical, // ค่าเริ่มต้น สไลด์ลง
-  leftToRight, // ซ้าย → ขวา
-  rightToLeft, // ขวา → ซ้าย
+  leftToRight, // เลื่อนหน้าจอจากซ้ายไปขวา
+  rightToLeft, // เลื่อนหน้าจอจากขวาไปซ้าย
 }
 
+// หน้าจอสำหรับอ่านไฟล์ CBZ (comic book zip)
 class CbzViewScreen
     extends
         StatefulWidget {
   final Series
-  series;
+  series; // ข้อมูลซีรีส์ทั้งหมด
   final int
-  currentIndex;
+  currentIndex; // บทที่กำลังอ่าน
   final List<
     File
   >
-  images;
+  images; // รายการภาพของตอนนั้น
 
   const CbzViewScreen({
     super.key,
@@ -43,24 +45,24 @@ class _CbzViewScreenState
           CbzViewScreen
         > {
   late int
-  currentIndex;
+  currentIndex; // บทปัจจุบัน
   late List<
     File
   >
-  currentImages;
+  currentImages; // ภาพของบทปัจจุบัน
   bool
   _isUiVisible =
-      true;
+      true; // แสดง/ซ่อน UI
   ReadingMode
   _readingMode =
-      ReadingMode.vertical;
+      ReadingMode.vertical; // โหมดการอ่านเริ่มต้น
 
   Key
   _viewKey =
-      UniqueKey();
+      UniqueKey(); // ใช้รีเฟรช view เมื่อเปลี่ยนบท
   final PageController
   _pageController =
-      PageController();
+      PageController(); // ควบคุม PageView สำหรับเลื่อนภาพ
 
   @override
   void
@@ -75,10 +77,11 @@ class _CbzViewScreenState
   @override
   void
   dispose() {
-    _pageController.dispose();
+    _pageController.dispose(); // ล้างตัวควบคุม PageView
     super.dispose();
   }
 
+  // ฟังก์ชันแตกไฟล์ CBZ เป็นไฟล์ภาพ
   Future<
     List<
       File
@@ -90,12 +93,12 @@ class _CbzViewScreenState
   ) async {
     final bytes = await File(
       cbzPath,
-    ).readAsBytes();
+    ).readAsBytes(); // อ่านไฟล์ .cbz เป็น bytes
     final archive = ZipDecoder().decodeBytes(
       bytes,
-    );
+    ); // แตก zip
     final tempDir =
-        await getTemporaryDirectory();
+        await getTemporaryDirectory(); // โฟลเดอร์ชั่วคราว
 
     final cbzName = cbzPath
         .split(
@@ -112,7 +115,7 @@ class _CbzViewScreenState
     if (!await extractDir.exists()) {
       await extractDir.create(
         recursive: true,
-      );
+      ); // สร้างโฟลเดอร์ถ้าไม่มี
     }
 
     List<
@@ -129,21 +132,22 @@ class _CbzViewScreenState
         );
         await outFile.create(
           recursive: true,
-        );
+        ); // สร้างไฟล์
         await outFile.writeAsBytes(
           file.content
               as List<
                 int
               >,
-        );
+        ); // เขียนเนื้อหา
         imageFiles.add(
           outFile,
-        );
+        ); // เก็บลง list
       }
     }
     return imageFiles;
   }
 
+  // ไปบทถัดไป
   Future<
     void
   >
@@ -164,7 +168,7 @@ class _CbzViewScreenState
           () {
             currentIndex++;
             currentImages = nextImages;
-            _viewKey = UniqueKey();
+            _viewKey = UniqueKey(); // รีเฟรช view
           },
         );
       }
@@ -181,6 +185,7 @@ class _CbzViewScreenState
     }
   }
 
+  // ไปบทก่อนหน้า
   Future<
     void
   >
@@ -200,7 +205,7 @@ class _CbzViewScreenState
           () {
             currentIndex--;
             currentImages = prevImages;
-            _viewKey = UniqueKey();
+            _viewKey = UniqueKey(); // รีเฟรช view
           },
         );
       }
@@ -217,6 +222,7 @@ class _CbzViewScreenState
     }
   }
 
+  // แสดงเมนูเลือกบท
   void
   showChaptersMenu() {
     showModalBottomSheet(
@@ -289,7 +295,7 @@ class _CbzViewScreenState
                             () {
                               currentIndex = index;
                               currentImages = images;
-                              _viewKey = UniqueKey();
+                              _viewKey = UniqueKey(); // รีเฟรช view
                             },
                           );
                         }
@@ -301,12 +307,13 @@ class _CbzViewScreenState
     );
   }
 
+  // สร้าง widget แสดงภาพตามโหมดการอ่าน
   Widget
   imageView() {
     switch (_readingMode) {
-      case ReadingMode.vertical:
+      case ReadingMode.vertical: // scroll ลง
         return Container(
-          color: Colors.black, // ✅ ใช้ Container แทน backgroundColor
+          color: Colors.black,
           child: ListView.builder(
             key: _viewKey,
             itemCount: currentImages.length,
@@ -320,15 +327,15 @@ class _CbzViewScreenState
           ),
         );
 
-      case ReadingMode.leftToRight:
-      case ReadingMode.rightToLeft:
+      case ReadingMode.leftToRight: // เลื่อนซ้าย→ขวา
+      case ReadingMode.rightToLeft: // เลื่อนขวา→ซ้าย
         return PageView.builder(
           key: _viewKey,
           controller: _pageController,
           scrollDirection: Axis.horizontal,
           reverse:
               _readingMode ==
-              ReadingMode.rightToLeft,
+              ReadingMode.rightToLeft, // สลับทิศทาง
           itemCount: currentImages.length,
           itemBuilder:
               (
@@ -357,7 +364,7 @@ class _CbzViewScreenState
       onTap: () {
         setState(
           () {
-            _isUiVisible = !_isUiVisible;
+            _isUiVisible = !_isUiVisible; // แตะเพื่อซ่อน/โชว์ UI
           },
         );
       },
@@ -378,9 +385,10 @@ class _CbzViewScreenState
                   fontSize: 18,
                 ),
                 iconTheme: const IconThemeData(
-                  color: Colors.orange, // 🎨 สีปุ่มย้อนกลับ
+                  color: Colors.orange,
                 ),
                 actions: [
+                  // ปุ่มเปลี่ยนโหมดการอ่าน
                   PopupMenuButton<
                     ReadingMode
                   >(
@@ -405,7 +413,7 @@ class _CbzViewScreenState
                           setState(
                             () {
                               _readingMode = mode;
-                              _viewKey = UniqueKey();
+                              _viewKey = UniqueKey(); // รีเฟรช view
                             },
                           );
                           Future.delayed(
@@ -417,7 +425,7 @@ class _CbzViewScreenState
                                   ReadingMode.vertical) {
                                 _pageController.jumpToPage(
                                   0,
-                                );
+                                ); // เริ่มหน้าแรก
                               }
                             },
                           );
@@ -462,7 +470,7 @@ class _CbzViewScreenState
           children: [
             Positioned.fill(
               child: imageView(),
-            ),
+            ), // แสดงภาพเต็มหน้าจอ
             if (_isUiVisible)
               Positioned(
                 left: 20,
@@ -473,6 +481,7 @@ class _CbzViewScreenState
                   ),
                   child: Row(
                     children: [
+                      // ปุ่มเปิดเมนูบท
                       Container(
                         color: Colors.orange,
                         child: IconButton(
@@ -483,6 +492,7 @@ class _CbzViewScreenState
                           onPressed: showChaptersMenu,
                         ),
                       ),
+                      // ปุ่มย้อนกลับบท
                       Container(
                         color: const Color(
                           0xFF1E1E1E,
@@ -495,6 +505,7 @@ class _CbzViewScreenState
                           onPressed: goToPrevious,
                         ),
                       ),
+                      // ปุ่มไปบทถัดไป
                       Container(
                         color: const Color(
                           0xFF1E1E1E,
@@ -517,6 +528,7 @@ class _CbzViewScreenState
     );
   }
 
+  // สร้าง row ของไอคอน + ข้อความ สำหรับเมนู
   Widget
   _buildMenuItem(
     IconData

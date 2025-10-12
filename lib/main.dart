@@ -30,8 +30,6 @@ class MyApp
         ),
       ),
       home: HomeScreen(),
-
-      //Map ของเส้นทาง (route) ที่ Flutter ใช้เวลาเปลี่ยนหน้า
     );
   }
 }

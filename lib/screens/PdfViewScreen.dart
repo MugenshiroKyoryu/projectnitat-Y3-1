@@ -1,21 +1,23 @@
-import 'package:flutter/material.dart';
-import 'package:pdfx/pdfx.dart';
+import 'package:flutter/material.dart'; // ใช้สร้าง UI ของ Flutter
+import 'package:pdfx/pdfx.dart'; // ใช้แสดงไฟล์ PDF
 
+// กำหนด enum สำหรับโหมดการอ่าน PDF
 enum ReadingMode {
-  vertical, // ค่าเริ่มต้น สไลด์ลง
-  leftToRight, // ซ้าย → ขวา
-  rightToLeft, // ขวา → ซ้าย
+  vertical, // scroll ลง
+  leftToRight, // เลื่อนซ้าย → ขวา
+  rightToLeft, // เลื่อนขวา → ซ้าย
 }
 
+// หน้าจอสำหรับอ่าน PDF
 class PdfViewScreen
     extends
         StatefulWidget {
   final String
-  path;
+  path; // path ของไฟล์ PDF
   final List<
     String
   >
-  playlist;
+  playlist; // รายการไฟล์ PDF ทั้งหมด (สำหรับ navigation)
 
   const PdfViewScreen({
     required this.path,
@@ -37,33 +39,35 @@ class _PdfViewScreenState
           PdfViewScreen
         > {
   PdfControllerPinch?
-  _pdfControllerPinch;
+  _pdfControllerPinch; // Controller สำหรับ pinch zoom
   PdfController?
-  _pdfControllerNormal;
+  _pdfControllerNormal; // Controller สำหรับ scroll ปกติ
 
   int
       // ignore: unused_field
       _pagesCount =
-      0;
+      0; // จำนวนหน้าทั้งหมดของ PDF
+
   int
       // ignore: unused_field
       _currentPage =
-      1;
+      1; // หน้าปัจจุบัน
   bool
   _isUiVisible =
-      true;
+      true; // แสดง/ซ่อน UI
   ReadingMode
   _readingMode =
-      ReadingMode.vertical;
+      ReadingMode.vertical; // โหมดการอ่านเริ่มต้น
 
   @override
   void
   initState() {
     super.initState();
-    _initControllers();
-    _loadPdfInfo();
+    _initControllers(); // สร้าง controller สำหรับ PDF
+    _loadPdfInfo(); // โหลดข้อมูล PDF เช่น จำนวนหน้า
   }
 
+  // สร้าง controller ของ PDF ทั้งแบบ pinch และ normal
   void
   _initControllers() {
     _pdfControllerPinch = PdfControllerPinch(
@@ -78,6 +82,7 @@ class _PdfViewScreenState
     );
   }
 
+  // โหลดข้อมูล PDF เช่น จำนวนหน้า
   void
   _loadPdfInfo() async {
     final doc = await PdfDocument.openFile(
@@ -91,11 +96,12 @@ class _PdfViewScreenState
   @override
   void
   dispose() {
-    _pdfControllerPinch?.dispose();
-    _pdfControllerNormal?.dispose();
+    _pdfControllerPinch?.dispose(); // ล้าง controller pinch
+    _pdfControllerNormal?.dispose(); // ล้าง controller normal
     super.dispose();
   }
 
+  // ไปไฟล์ถัดไปใน playlist
   Future<
     void
   >
@@ -109,6 +115,7 @@ class _PdfViewScreenState
       final nextPath =
           widget.playlist[currentIndex +
               1];
+      // เปิด PdfViewScreen ของไฟล์ถัดไป
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -122,6 +129,7 @@ class _PdfViewScreenState
         ),
       );
     } else {
+      // แสดงข้อความถ้าเป็นไฟล์สุดท้าย
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(
@@ -134,6 +142,7 @@ class _PdfViewScreenState
     }
   }
 
+  // ไปไฟล์ก่อนหน้าใน playlist
   Future<
     void
   >
@@ -146,6 +155,7 @@ class _PdfViewScreenState
       final prevPath =
           widget.playlist[currentIndex -
               1];
+      // เปิด PdfViewScreen ของไฟล์ก่อนหน้า
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -159,6 +169,7 @@ class _PdfViewScreenState
         ),
       );
     } else {
+      // แสดงข้อความถ้าเป็นไฟล์แรก
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(
@@ -171,11 +182,12 @@ class _PdfViewScreenState
     }
   }
 
+  // แสดงเมนูเลือกบท (ไฟล์) จาก playlist
   void
   showChaptersMenu() {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.grey[900],
+      backgroundColor: Colors.grey[900], // พื้นหลังเมนูมืด
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(
@@ -205,7 +217,7 @@ class _PdfViewScreenState
                   ) {
                     final isCurrent =
                         widget.path ==
-                        widget.playlist[index];
+                        widget.playlist[index]; // ตรวจสอบไฟล์ปัจจุบัน
                     return ListTile(
                       leading: Text(
                         "${index + 1}",
@@ -227,7 +239,7 @@ class _PdfViewScreenState
                       onTap: () {
                         Navigator.pop(
                           context,
-                        );
+                        ); // ปิดเมนู
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
@@ -248,6 +260,7 @@ class _PdfViewScreenState
     );
   }
 
+  // สร้าง widget สำหรับแสดง PDF ตามโหมดการอ่าน
   Widget
   _buildPdfView() {
     if (_readingMode ==
@@ -263,7 +276,7 @@ class _PdfViewScreenState
             ) {
               setState(
                 () {
-                  _currentPage = page;
+                  _currentPage = page; // อัพเดตหน้าปัจจุบัน
                 },
               );
             },
@@ -274,10 +287,10 @@ class _PdfViewScreenState
           _readingMode,
         ),
         controller: _pdfControllerNormal!,
-        scrollDirection: Axis.horizontal,
+        scrollDirection: Axis.horizontal, // เลื่อนแนวนอน
         reverse:
             _readingMode ==
-            ReadingMode.rightToLeft,
+            ReadingMode.rightToLeft, // ถ้าโหมดขวา→ซ้าย
         onPageChanged:
             (
               page,
@@ -302,13 +315,13 @@ class _PdfViewScreenState
         .split(
           '/',
         )
-        .last;
+        .last; // เอาชื่อไฟล์จาก path
 
     return GestureDetector(
       onTap: () {
         setState(
           () {
-            _isUiVisible = !_isUiVisible;
+            _isUiVisible = !_isUiVisible; // แตะเพื่อซ่อน/โชว์ UI
           },
         );
       },
@@ -317,9 +330,9 @@ class _PdfViewScreenState
             ? AppBar(
                 centerTitle: false,
                 iconTheme: const IconThemeData(
-                  color: Colors.orange, // 🎨 สีปุ่มย้อนกลับ
-                ),
-                backgroundColor: Colors.grey[900], // ✅ ธีมมืด
+                  color: Colors.orange,
+                ), // สีปุ่มย้อนกลับ
+                backgroundColor: Colors.grey[900], // พื้นหลังมืด
                 titleSpacing: 12,
                 title: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -327,7 +340,7 @@ class _PdfViewScreenState
                     Flexible(
                       child: Text(
                         fileName,
-                        overflow: TextOverflow.ellipsis,
+                        overflow: TextOverflow.ellipsis, // ชื่อยาวตัดด้วย ...
                         style: const TextStyle(
                           color: Colors.white,
                         ),
@@ -336,16 +349,17 @@ class _PdfViewScreenState
                     const SizedBox(
                       width: 8,
                     ),
+                    // เมนูเลือกโหมดการอ่าน
                     PopupMenuButton<
                       ReadingMode
                     >(
                       padding: EdgeInsets.zero,
                       icon: const Icon(
                         Icons.more_vert,
-                        color: Colors.white, // ✅ ไอคอนสีขาว
+                        color: Colors.white,
                       ),
                       tooltip: 'เปลี่ยนโหมดการอ่าน',
-                      color: Colors.grey[850], // ✅ พื้นหลังเมนูเข้ม
+                      color: Colors.grey[850],
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(
                           12,
@@ -358,7 +372,7 @@ class _PdfViewScreenState
                             setState(
                               () {
                                 _readingMode = mode;
-                                _initControllers();
+                                _initControllers(); // รีเซ็ต controller เมื่อเปลี่ยนโหมด
                               },
                             );
                           },
@@ -366,6 +380,7 @@ class _PdfViewScreenState
                           (
                             context,
                           ) => [
+                            // โหมด scroll ลง
                             PopupMenuItem(
                               value: ReadingMode.vertical,
                               child: Row(
@@ -401,6 +416,7 @@ class _PdfViewScreenState
                                 ],
                               ),
                             ),
+                            // โหมดเลื่อนขวา → ซ้าย
                             PopupMenuItem(
                               value: ReadingMode.rightToLeft,
                               child: Row(
@@ -436,6 +452,7 @@ class _PdfViewScreenState
                                 ],
                               ),
                             ),
+                            // โหมดเลื่อนซ้าย → ขวา
                             PopupMenuItem(
                               value: ReadingMode.leftToRight,
                               child: Row(
@@ -481,7 +498,7 @@ class _PdfViewScreenState
           children: [
             Positioned.fill(
               child: _buildPdfView(),
-            ),
+            ), // แสดง PDF เต็มจอ
             if (_isUiVisible)
               Positioned(
                 left: 20,
@@ -492,6 +509,7 @@ class _PdfViewScreenState
                   ),
                   child: Row(
                     children: [
+                      // ปุ่มเปิดเมนูบท
                       Container(
                         color: Colors.orange,
                         child: IconButton(
@@ -502,6 +520,7 @@ class _PdfViewScreenState
                           onPressed: showChaptersMenu,
                         ),
                       ),
+                      // ปุ่มย้อนกลับบท
                       Container(
                         color: Colors.grey[850],
                         child: IconButton(
@@ -512,6 +531,7 @@ class _PdfViewScreenState
                           onPressed: goToPrevious,
                         ),
                       ),
+                      // ปุ่มไปบทถัดไป
                       Container(
                         color: Colors.grey[850],
                         child: IconButton(

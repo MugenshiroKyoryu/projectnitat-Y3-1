@@ -1,14 +1,16 @@
-import 'dart:io';
+import 'dart:io'; //ใช้ ทำงานกับไฟล์และระบบของเครื่อง
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:archive/archive_io.dart';
-import 'package:pdfx/pdfx.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:file_picker/file_picker.dart'; //ใช้สำหรับ เปิดหน้าต่างเลือกไฟล์
+import 'package:path_provider/path_provider.dart'; //ใช้เพื่อ หาที่เก็บไฟล์ภายในเครื่อง
+import 'package:archive/archive_io.dart'; //ใช้สำหรับ บีบอัด/คลายบีบอัดไฟล์ (ZIP, CBZ, RAR ฯลฯ)โดยเฉพาะ CBZ ซึ่งก็คือ ZIP ของรูปภาพ
+import 'package:pdfx/pdfx.dart'; //ใช้สำหรับ เปิดและแสดงไฟล์ PDF
+import 'package:permission_handler/permission_handler.dart'; //ใช้สำหรับ ขอสิทธิ์ (Permission) จากระบบ เช่น สิทธิ์เข้าถึงไฟล์, กล้อง, หรือที่เก็บข้อมูล
 
 import 'PdfViewScreen.dart';
 import 'CbzViewScreen.dart';
 import 'package:workshopfinal/models/data.dart';
+
+//-----------------------------------หน้าหลัก-----------------------------------//
 
 class HomeScreen
     extends
@@ -58,6 +60,7 @@ class _HomeScreenState
     0xFFFFA726,
   );
 
+  //-----------------------------------ฟังก์ชันสำหรับขอสิทธิ์เข้าถึงไฟล์-----------------------------------//
   Future<
     void
   >
@@ -75,6 +78,8 @@ class _HomeScreenState
     );
   }
 
+  //-----------------------------------ให้ผู้ใช้เลือกไฟล์ PDF หรือ CBZ หลายไฟล์ แล้วบันทึกเป็นเพลย์ลิสต์ใหม่ (Series)-----------------------------------//
+
   Future<
     void
   >
@@ -82,19 +87,19 @@ class _HomeScreenState
     await requestPermissions();
     FilePickerResult?
     result = await FilePicker.platform.pickFiles(
-      allowMultiple: true,
-      type: FileType.custom,
+      allowMultiple: true, //เลือกได้หลายไฟล์
+      type: FileType.custom, //จำกัดประเภทไฟล์เอง
       allowedExtensions: [
         'pdf',
         'cbz',
-      ],
-      allowCompression: false,
-      withData: false,
+      ], //เลือกได้เฉพาะไฟล์ PDF และ CBZ
+      allowCompression: false, //ไม่บีบไฟล์
+      withData: false, //เอาเฉพาะ path ของไฟล์ ไม่ต้องโหลดข้อมูลไฟล์เข้าหน่วยความจำ
     );
 
     if (result !=
             null &&
-        result.files.isNotEmpty) {
+        result.files.isNotEmpty) /*ตรวจสอบว่าผู้ใช้เลือกไฟล์จริง (ไม่กดยกเลิก)*/ {
       List<
         String
       >
@@ -105,11 +110,11 @@ class _HomeScreenState
           allFiles.add(
             file.path!,
           );
-      }
+      } /*สร้างลิสต์ allFiles วนลูปเพิ่ม path ของแต่ละไฟล์ที่เลือกเข้ามาในลิสต์*/
 
       if (allFiles.isNotEmpty) {
         String?
-        playlistName = await _askPlaylistName();
+        playlistName = await _askPlaylistName(); /*ถ้ามีไฟล์จริง → เรียก _askPlaylistName()เพื่อให้ผู้ใช้ตั้งชื่อ “เพลย์ลิสต์” (หรือชุดหนังสือ/การ์ตูน)*/
         if (playlistName !=
                 null &&
             playlistName.trim().isNotEmpty) {
@@ -123,13 +128,15 @@ class _HomeScreenState
               );
               selectedSeries.add(
                 false,
-              );
+              ); /*ถ้าผู้ใช้ตั้งชื่อเพลย์ลิสต์แล้ว (ไม่ว่าง ไม่ยกเลิก)→ ใช้ setState() เพื่ออัปเดตหน้า UI (เช่น "Series(title: 'One Piece', files: ['1.pdf', '2.pdf', ...])") selectedSeries.add(false) อาจใช้เพื่อเก็บสถานะ “เลือก/ไม่เลือก” ของแต่ละเพลย์ลิสต์*/
             },
           );
         }
       }
     }
   }
+
+  //-----------------------------------ให้ผู้ใช้พิมพ์ชื่อ Playlist (สร้างใหม่ หรือแก้ไขของเดิม)-----------------------------------//
 
   Future<
     String?
@@ -326,26 +333,28 @@ class _HomeScreenState
     }
   }
 
+  //-----------------------------------สร้างภาพตัวอย่าง (thumbnail) ของไฟล์ — ซึ่งอาจเป็น PDF หรือ CBZ (ไฟล์การ์ตูน)-----------------------------------//
+
   Future<
     Widget
   >
   buildThumbnail(
     String
-    path,
+    path, //อ่านไฟล์จาก path
   ) async {
     if (path.endsWith(
-      '.pdf',
+      '.pdf', //ถ้าเป็น .pdf → แสดงภาพจากหน้าแรกของ PDF
     )) {
       final doc = await PdfDocument.openFile(
-        path,
+        path, //เปิดไฟล์ PDF จาก path
       );
       final page = await doc.getPage(
-        1,
+        1, //เปิดหน้าแรกของ PDF
       );
       final pageImage = await page.render(
         width: 300,
         height: 400,
-      );
+      ); //แปลงหน้า PDF เป็นรูปภาพ
       if (pageImage !=
           null)
         return ClipRRect(
@@ -358,7 +367,7 @@ class _HomeScreenState
           ),
         );
     } else if (path.endsWith(
-      '.cbz',
+      '.cbz', //ถ้าเป็น .cbz → แสดงภาพแรกจากไฟล์การ์ตูน
     )) {
       final files = await _extractCbzForThumbnail(
         path,
@@ -371,7 +380,7 @@ class _HomeScreenState
           child: Image.file(
             files.first,
             fit: BoxFit.cover,
-          ),
+          ), //ถ้า render สำเร็จ → นำรูปมาแสดงด้วย Image.memory() (เพราะรูปอยู่ในหน่วยความจำเป็น bytes)
         );
     }
     return Container(
@@ -381,8 +390,10 @@ class _HomeScreenState
           10,
         ),
       ),
-    );
+    ); //ถ้าไม่ใช่ PDF หรือ CBZ (หรือเปิดไม่ได้) แสดงกล่องเปล่าสีเทาเข้มแทน เพื่อให้ layout ไม่พังและดูเรียบร้อย
   }
+
+  //-----------------------------------แตกไฟล์ .cbz)-----------------------------------//
 
   Future<
     List<
@@ -395,12 +406,12 @@ class _HomeScreenState
   ) async {
     final bytes = await File(
       cbzPath,
-    ).readAsBytes();
+    ).readAsBytes(); //อ่านไฟล์ .cbz ทั้งหมดจากพาธที่ให้มา ผลลัพธ์เป็นข้อมูลดิบ (raw bytes) ของไฟล์ ZIP
     final archive = ZipDecoder().decodeBytes(
       bytes,
-    );
+    ); //ใช้แพ็กเกจ archive เพื่อถอดรหัส ZIP (CBZ) และdecodeBytes() จะอ่าน bytes แล้วแปลงเป็นอ็อบเจ็กต์ Archive ที่ข้างในมีไฟล์ทั้งหมดใน .cbz (เช่น .jpg, .png, .xml ฯลฯ
     final tempDir =
-        await getTemporaryDirectory();
+        await getTemporaryDirectory(); //ดึงโฟลเดอร์ชั่วคราวของแอป (ที่ Flutter จัดให้)🔹 ใช้เพื่อเก็บไฟล์ที่แตกออกมา
     final cbzName = cbzPath
         .split(
           '/',
@@ -409,44 +420,44 @@ class _HomeScreenState
         .replaceAll(
           '.cbz',
           '',
-        );
+        ); //ตัดชื่อไฟล์ออกมาจากพาธ เช่น/storage/emulated/0/Comics/Naruto.cbz → Naruto
     final extractDir = Directory(
       '${tempDir.path}/$cbzName-thumb',
-    );
+    ); //กำหนดโฟลเดอร์ที่จะเก็บไฟล์แตกไว้เช่น /cache/Naruto-thumb
     if (!await extractDir
         .exists())
       await extractDir.create(
         recursive: true,
-      );
+      ); //ตรวจว่ามีโฟลเดอร์นี้อยู่หรือยัง🔹 ถ้ายังไม่มี → สร้างใหม่ (รวมถึงโฟลเดอร์ย่อย ๆ ด้วย เพราะ recursive: true)
 
     List<
       File
     >
     imageFiles =
-        [];
+        []; //สร้างลิสต์ว่างไว้เก็บไฟล์ที่แตกออกมา (ในที่นี้จะมีแค่ 1 รูป)
     for (final file
-        in archive) {
-      if (file.isFile) {
-        final filename = '${extractDir.path}/${file.name}';
+        in archive) /*วนลูปทุกไฟล์ภายใน .cbz (ที่ decode จาก ZIP ไว้ก่อนหน้านี้)*/ {
+      if (file.isFile) /*ตรวจว่าไฟล์ใน archive เป็นไฟล์จริง (ไม่ใช่โฟลเดอร์)ถ้าใช่ — ทำงานข้างในต่อ*/ {
+        final filename = '${extractDir.path}/${file.name}'; /*สร้าง path สำหรับบันทึกไฟล์ที่จะแตก เช่น📂 /cache/Naruto-thumb/page01.jpg*/
         final outFile = File(
           filename,
-        );
+        ); //สร้างไฟล์ใหม่ตาม path ที่กำหนด
         await outFile.create(
           recursive: true,
-        );
+        ); //recursive: true ช่วยให้สร้างโฟลเดอร์ย่อยอัตโนมัติหากยังไม่มี
         await outFile.writeAsBytes(
           file.content
               as List<
                 int
               >,
-        );
+        ); //เขียนข้อมูลในไฟล์ (ที่อยู่ใน file.content) ออกมาเป็นไฟล์จริงบนเครื่อง ใช้ as List<int> เพราะเนื้อหาไฟล์ ZIP เก็บเป็น bytes
         imageFiles.add(
           outFile,
-        );
-        break;
+        ); //เพิ่มไฟล์ที่สร้างเสร็จลงในลิสต์ imageFiles
+        break; //ออกจากลูปทันทีหลังจากเจอไฟล์แรก
       }
     }
-    return imageFiles;
+    return imageFiles; //ส่งกลับลิสต์ที่มีไฟล์ภาพ 1 ไฟล์ (ภาพแรกใน .cbz)
   }
 
   @override
@@ -456,30 +467,30 @@ class _HomeScreenState
     context,
   ) {
     return Scaffold(
-      backgroundColor: _bgColor,
+      backgroundColor: _bgColor, // กำหนดสีพื้นหลังของหน้าจอ
       appBar: AppBar(
-        backgroundColor: Colors.grey[900],
+        backgroundColor: Colors.grey[900], // สีพื้นหลัง AppBar
         title: Text(
           isSelectionMode
-              ? "${selectedSeries.where((e) => e).length} Selected"
-              : "ชั้นหนังสือ",
+              ? "${selectedSeries.where((e) => e).length} Selected" // ถ้าอยู่โหมดเลือก แสดงจำนวนไอเท็มที่เลือก
+              : "ชั้นหนังสือ", // ปกติแสดงชื่อหน้าปกติ
           style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+            color: Colors.white, // สีตัวอักษร
+            fontWeight: FontWeight.bold, // ตัวอักษรหนา
           ),
         ),
         actions: [
-          if (isSelectionMode)
+          if (isSelectionMode) // ถ้าอยู่โหมดเลือก
             IconButton(
               icon: const Icon(
-                Icons.edit,
+                Icons.edit, // ไอคอนแก้ไข
               ),
-              color: _accentColor,
+              color: _accentColor, // สีไอคอน
               onPressed: () {
                 final selectedIndexes =
                     <
                       int
-                    >[];
+                    >[]; // สร้าง List เก็บ index ของไอเท็มที่เลือก
                 for (
                   int i = 0;
                   i <
@@ -489,30 +500,30 @@ class _HomeScreenState
                   if (selectedSeries[i])
                     selectedIndexes.add(
                       i,
-                    );
+                    ); // เก็บ index ของไอเท็มที่ถูกเลือก
                 }
                 if (selectedIndexes.isNotEmpty) {
                   for (final index in selectedIndexes) {
                     _editPlaylistName(
                       index,
-                    );
+                    ); // เรียกฟังก์ชันแก้ไขชื่อ Playlist ตาม index
                   }
                 }
               },
             ),
-          if (isSelectionMode)
+          if (isSelectionMode) // ถ้าอยู่โหมดเลือก
             IconButton(
               icon: const Icon(
-                Icons.delete,
+                Icons.delete, // ไอคอนลบ
               ),
-              color: Colors.redAccent,
+              color: Colors.redAccent, // สีไอคอนแดง
               onPressed: () {
                 setState(
                   () {
                     final toRemove =
                         <
                           int
-                        >[];
+                        >[]; // สร้าง List เก็บ index ของไอเท็มที่จะลบ
                     for (
                       int i = 0;
                       i <
@@ -522,7 +533,7 @@ class _HomeScreenState
                       if (selectedSeries[i])
                         toRemove.add(
                           i,
-                        );
+                        ); // เก็บ index ของไอเท็มที่เลือก
                     }
                     toRemove.sort(
                       (
@@ -531,40 +542,23 @@ class _HomeScreenState
                       ) => b.compareTo(
                         a,
                       ),
-                    );
+                    ); // จัดเรียงจากมากไปน้อยเพื่อไม่ให้ remove ผิดตำแหน่ง
                     for (final index in toRemove) {
                       seriesList.removeAt(
                         index,
-                      );
+                      ); // ลบไอเท็มออกจาก seriesList
                       selectedSeries.removeAt(
                         index,
-                      );
+                      ); // ลบสถานะเลือกออกจาก selectedSeries
                     }
-                    isSelectionMode = false;
-                  },
-                );
-              },
-            ),
-          if (isSelectionMode)
-            IconButton(
-              icon: const Icon(
-                Icons.close,
-              ),
-              color: Colors.white70,
-              onPressed: () {
-                setState(
-                  () {
-                    isSelectionMode = false;
-                    selectedSeries = List.filled(
-                      seriesList.length,
-                      false,
-                    );
+                    isSelectionMode = false; // ออกจากโหมดเลือกหลังลบเสร็จ
                   },
                 );
               },
             ),
         ],
       ),
+
       body: seriesList.isEmpty
           ? const Center(
               child: Text(
