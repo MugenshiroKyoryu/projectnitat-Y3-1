@@ -560,54 +560,60 @@ class _HomeScreenState
       ),
 
       body: seriesList.isEmpty
+          // ถ้าไม่มีข้อมูลใน seriesList ให้แสดงข้อความกึ่งกลางหน้าจอ
           ? const Center(
               child: Text(
-                "กด + เพื่อเพิ่มไฟล์",
+                "กด + เพื่อเพิ่มไฟล์", // ข้อความบอกผู้ใช้ให้เพิ่มไฟล์
                 style: TextStyle(
                   color: Colors.grey,
                   fontSize: 18,
                 ),
               ),
             )
+          // ถ้ามีข้อมูลใน seriesList ให้สร้าง GridView แสดงรายการ
           : GridView.builder(
               padding: const EdgeInsets.all(
                 8,
               ),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                childAspectRatio: 0.7,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
+                crossAxisCount: 3, // จำนวนคอลัมน์
+                childAspectRatio: 0.7, // อัตราส่วนของความสูง/ความกว้างของแต่ละช่อง
+                crossAxisSpacing: 8, // ระยะห่างระหว่างคอลัมน์
+                mainAxisSpacing: 8, // ระยะห่างระหว่างแถว
               ),
-              itemCount: seriesList.length,
+              itemCount: seriesList.length, // จำนวนไอเท็มใน Grid
               itemBuilder:
                   (
                     context,
                     index,
                   ) {
-                    final series = seriesList[index];
+                    final series = seriesList[index]; // ข้อมูลแต่ละ series
                     final isSelected =
                         selectedSeries.length >
                             index &&
                         selectedSeries[index];
+                    // ตรวจสอบว่าไอเท็มนี้ถูกเลือกอยู่หรือไม่
 
                     return GestureDetector(
                       onLongPress: () {
+                        // กดค้างเพื่อเปิดโหมดเลือกหลายไอเท็ม
                         setState(
                           () {
                             isSelectionMode = true;
-                            selectedSeries[index] = true;
+                            selectedSeries[index] = true; // เลือกไอเท็มนี้
                           },
                         );
                       },
                       onTap: () {
                         if (isSelectionMode) {
+                          // ถ้าอยู่ในโหมดเลือกหลายไอเท็ม ให้สลับสถานะเลือก
                           setState(
                             () {
                               selectedSeries[index] = !selectedSeries[index];
                             },
                           );
                         } else {
+                          // ถ้าไม่ได้อยู่ในโหมดเลือกหลายไอเท็ม เปิดหน้ารายละเอียด series
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -626,24 +632,24 @@ class _HomeScreenState
                           milliseconds: 200,
                         ),
                         decoration: BoxDecoration(
-                          color: _cardColor,
+                          color: _cardColor, // สีพื้นหลังการ์ด
                           borderRadius: BorderRadius.circular(
                             12,
-                          ),
+                          ), // มุมโค้ง
                           boxShadow: [
                             BoxShadow(
                               color: isSelected
                                   ? _accentColor.withOpacity(
                                       0.5,
-                                    )
-                                  : Colors.black54,
+                                    ) // เงาไฮไลต์ถ้าเลือก
+                                  : Colors.black54, // เงาปกติ
                               blurRadius: isSelected
                                   ? 12
-                                  : 6,
+                                  : 6, // ความฟุ้งของเงา
                               offset: const Offset(
                                 0,
                                 4,
-                              ),
+                              ), // การเลื่อนเงา
                             ),
                           ],
                         ),
@@ -659,12 +665,14 @@ class _HomeScreenState
                                         future: buildThumbnail(
                                           series.files.first,
                                         ),
+                                        // สร้าง thumbnail ของไฟล์แรกใน series
                                         builder:
                                             (
                                               context,
                                               snapshot,
                                             ) {
                                               if (snapshot.hasData) return snapshot.data!;
+                                              // ถ้ายังโหลดไม่เสร็จ แสดงวงล้อโหลด
                                               return Container(
                                                 decoration: BoxDecoration(
                                                   color: Colors.grey[800],
@@ -685,7 +693,7 @@ class _HomeScreenState
                                   height: 5,
                                 ),
                                 Text(
-                                  series.title,
+                                  series.title, // แสดงชื่อ series
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
@@ -696,6 +704,7 @@ class _HomeScreenState
                               ],
                             ),
                             if (isSelectionMode)
+                              // ถ้าอยู่ในโหมดเลือกหลายไอเท็ม ให้แสดง Checkbox มุมขวาบน
                               Positioned(
                                 top: 4,
                                 right: 4,
@@ -723,6 +732,7 @@ class _HomeScreenState
       floatingActionButton: FloatingActionButton(
         backgroundColor: _accentColor,
         onPressed: () {
+          // กดปุ่ม + เพื่อเพิ่มไฟล์
           showModalBottomSheet(
             backgroundColor: _cardColor,
             context: context,
@@ -747,8 +757,8 @@ class _HomeScreenState
                           onTap: () {
                             Navigator.pop(
                               context,
-                            );
-                            pickFiles();
+                            ); // ปิด bottom sheet
+                            pickFiles(); // เรียกฟังก์ชันเลือกไฟล์
                           },
                         ),
                       ],
@@ -771,7 +781,7 @@ class SeriesDetailScreen
     extends
         StatefulWidget {
   final Series
-  series;
+  series; // รับข้อมูล Series ที่จะแสดงรายละเอียด
   const SeriesDetailScreen({
     super.key,
     required this.series,
@@ -790,6 +800,7 @@ class _SeriesDetailScreenState
         State<
           SeriesDetailScreen
         > {
+  // ฟังก์ชันสำหรับแตกไฟล์ .cbz ออกมาเป็นรูปภาพ
   Future<
     List<
       File
@@ -801,12 +812,12 @@ class _SeriesDetailScreenState
   ) async {
     final bytes = await File(
       cbzPath,
-    ).readAsBytes();
+    ).readAsBytes(); // อ่านไฟล์ .cbz เป็น byte
     final archive = ZipDecoder().decodeBytes(
       bytes,
-    );
+    ); // แตก zip
     final tempDir =
-        await getTemporaryDirectory();
+        await getTemporaryDirectory(); // โฟลเดอร์ชั่วคราวสำหรับเก็บไฟล์
 
     final cbzName = cbzPath
         .split(
@@ -819,7 +830,7 @@ class _SeriesDetailScreenState
         );
     final extractDir = Directory(
       '${tempDir.path}/$cbzName',
-    );
+    ); // สร้างโฟลเดอร์เก็บรูป
     if (!await extractDir
         .exists())
       await extractDir.create(
@@ -846,15 +857,16 @@ class _SeriesDetailScreenState
               as List<
                 int
               >,
-        );
+        ); // เขียนไฟล์รูปลงเครื่อง
         imageFiles.add(
           outFile,
-        );
+        ); // เก็บไฟล์รูปลง list
       }
     }
-    return imageFiles;
+    return imageFiles; // คืนค่า list รูปทั้งหมด
   }
 
+  // ฟังก์ชันสำหรับเพิ่มไฟล์ PDF/CBZ เข้า Series
   Future<
     void
   >
@@ -866,7 +878,7 @@ class _SeriesDetailScreenState
       allowedExtensions: [
         'pdf',
         'cbz',
-      ],
+      ], // จำกัดเฉพาะ PDF/CBZ
       allowCompression: false,
       withData: false,
     );
@@ -882,18 +894,19 @@ class _SeriesDetailScreenState
             null)
           newFiles.add(
             file.path!,
-          );
+          ); // เก็บ path ของไฟล์ที่เลือก
       }
       setState(
         () {
           widget.series.files.addAll(
             newFiles,
-          );
+          ); // เพิ่มไฟล์ใหม่เข้า Series
         },
       );
     }
   }
 
+  // ฟังก์ชันสร้าง thumbnail ของไฟล์ PDF หรือ CBZ
   Future<
     Widget
   >
@@ -906,14 +919,14 @@ class _SeriesDetailScreenState
     )) {
       final doc = await PdfDocument.openFile(
         path,
-      );
+      ); // เปิด PDF
       final page = await doc.getPage(
         1,
-      );
+      ); // เลือกหน้าแรก
       final pageImage = await page.render(
         width: 120,
         height: 160,
-      );
+      ); // สร้าง image
       if (pageImage !=
           null)
         return ClipRRect(
@@ -921,7 +934,7 @@ class _SeriesDetailScreenState
             8,
           ),
           child: Image.memory(
-            pageImage.bytes,
+            pageImage.bytes, // แสดง thumbnail จาก memory
             fit: BoxFit.cover,
           ),
         );
@@ -930,18 +943,19 @@ class _SeriesDetailScreenState
     )) {
       final files = await extractCbz(
         path,
-      );
+      ); // แตก CBZ ออกมา
       if (files.isNotEmpty)
         return ClipRRect(
           borderRadius: BorderRadius.circular(
             8,
           ),
           child: Image.file(
-            files.first,
+            files.first, // ใช้รูปแรกของ CBZ เป็น thumbnail
             fit: BoxFit.cover,
           ),
         );
     }
+    // ถ้าไม่ใช่ PDF หรือ CBZ ให้แสดง placeholder
     return Container(
       decoration: BoxDecoration(
         color: Colors.grey[800],
@@ -958,31 +972,34 @@ class _SeriesDetailScreenState
     BuildContext
     context,
   ) {
+    // กำหนดสีหลักของ UI
     final Color
     _accentColor = const Color(
       0xFFFFA726,
-    );
+    ); // สีปุ่ม / ไฮไลต์
     final Color
     _bgColor = const Color(
       0xFF1A1A1A,
-    );
+    ); // สีพื้นหลังของหน้าจอ
 
     return Scaffold(
       backgroundColor: _bgColor,
       appBar: AppBar(
-        backgroundColor: Colors.grey[900],
+        backgroundColor: Colors.grey[900], // สีพื้นหลัง AppBar
         iconTheme: const IconThemeData(
-          color: Colors.orange, // 🎨 สีปุ่มย้อนกลับ
+          color: Colors.orange, // 🎨 สีไอคอนย้อนกลับ
         ),
         title: Text(
-          widget.series.title,
+          widget.series.title, // แสดงชื่อซีรีส์ใน AppBar
           style: const TextStyle(
             color: Colors.white,
           ),
         ),
       ),
 
+      // แสดงเนื้อหาในหน้าจอ
       body: widget.series.files.isEmpty
+          // ถ้าไม่มีไฟล์ในซีรีส์ ให้แสดงข้อความกลางหน้าจอ
           ? const Center(
               child: Text(
                 "ไม่มีไฟล์ในซีรีส์นี้",
@@ -991,23 +1008,25 @@ class _SeriesDetailScreenState
                 ),
               ),
             )
+          // ถ้ามีไฟล์ ให้สร้าง ListView แสดงรายการไฟล์
           : ListView.builder(
-              itemCount: widget.series.files.length,
+              itemCount: widget.series.files.length, // จำนวนไฟล์ในซีรีส์
               itemBuilder:
                   (
                     context,
                     index,
                   ) {
-                    final path = widget.series.files[index];
+                    final path = widget.series.files[index]; // path ของไฟล์
                     final fileName = path
                         .split(
                           '/',
                         )
-                        .last;
+                        .last; // ชื่อไฟล์
+
                     return Card(
                       color: const Color(
                         0xFF2C2C2C,
-                      ),
+                      ), // สีพื้นหลังของ card
                       margin: const EdgeInsets.symmetric(
                         horizontal: 8,
                         vertical: 5,
@@ -1015,36 +1034,38 @@ class _SeriesDetailScreenState
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(
                           12,
-                        ),
+                        ), // มุมโค้ง
                       ),
                       child: ListTile(
+                        // แสดง thumbnail ของไฟล์ PDF หรือ CBZ
                         leading:
                             FutureBuilder<
                               Widget
                             >(
                               future: buildThumbnail(
                                 path,
-                              ),
+                              ), // เรียกฟังก์ชันสร้าง thumbnail
                               builder:
                                   (
                                     context,
                                     snapshot,
                                   ) {
-                                    if (snapshot.hasData) return snapshot.data!;
+                                    if (snapshot.hasData) return snapshot.data!; // ถ้าโหลดเสร็จ
                                     return const SizedBox(
                                       width: 50,
                                       child: CircularProgressIndicator(
-                                        color: Colors.orangeAccent,
+                                        color: Colors.orangeAccent, // แสดงวงล้อโหลด
                                       ),
                                     );
                                   },
                             ),
                         title: Text(
-                          fileName,
+                          fileName, // แสดงชื่อไฟล์
                           style: const TextStyle(
                             color: Colors.white70,
                           ),
                         ),
+                        // ปุ่มลบไฟล์
                         trailing: IconButton(
                           icon: const Icon(
                             Icons.delete,
@@ -1055,15 +1076,17 @@ class _SeriesDetailScreenState
                               () {
                                 widget.series.files.removeAt(
                                   index,
-                                );
+                                ); // ลบไฟล์ออกจาก list
                               },
                             );
                           },
                         ),
+                        // กดที่ไฟล์เพื่อเปิด
                         onTap: () async {
                           if (path.endsWith(
                             '.pdf',
                           )) {
+                            // ถ้าเป็น PDF ให้เปิด PdfViewScreen
                             Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -1079,6 +1102,7 @@ class _SeriesDetailScreenState
                           } else if (path.endsWith(
                             '.cbz',
                           )) {
+                            // ถ้าเป็น CBZ ให้แตกไฟล์และเปิด CbzViewScreen
                             final images = await extractCbz(
                               path,
                             );
@@ -1101,8 +1125,10 @@ class _SeriesDetailScreenState
                     );
                   },
             ),
+
+      // ปุ่มลอย + สำหรับเพิ่มไฟล์เข้า Series
       floatingActionButton: FloatingActionButton(
-        onPressed: addFilesToPlaylist,
+        onPressed: addFilesToPlaylist, // เรียกฟังก์ชันเพิ่มไฟล์
         backgroundColor: _accentColor,
         child: const Icon(
           Icons.add,
